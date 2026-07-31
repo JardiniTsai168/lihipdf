@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
+import PizZip from "pizzip";
 
 import { CASE_FORM_DEFAULTS, validateCaseForm } from "./lib/schema";
 
@@ -69,6 +70,152 @@ function summarizeIssues(result) {
   return [...new Set(result.error.issues.map((issue) => issue.message))];
 }
 
+function normalize(value) {
+  return String(value ?? "").trim();
+}
+
+function rocDateString(value) {
+  if (!value) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return "";
+  return `${year - 1911} 年 ${month} 月 ${day} 日`;
+}
+
+function solarCategoryLine(value) {
+  const selected = normalize(value);
+  const options = ["屋頂", "地面", "水面"];
+  return options
+    .map((option) => (option === selected ? `■${option}` : `□${option}`))
+    .join("  ");
+}
+
+function buildDocumentPayload(formData) {
+  const normalizedOtherNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+
+  return {
+    caseNumber: "",
+    districtOffice: "",
+    ownerName: normalize(formData.ownerName),
+    principalName: normalize(formData.principalName),
+    electricNumber: "",
+    ownerAddress: normalize(formData.ownerAddress),
+    ownerPhone: normalize(formData.ownerPhone),
+    siteAddress: normalize(formData.siteAddress),
+    contactPerson: normalize(formData.contactPerson),
+    contactAddress: normalize(formData.contactAddress),
+    contactPhone: normalize(formData.contactPhone),
+    solarCategoryLine: solarCategoryLine(formData.solarCategory),
+    installedExisting: "",
+    installedNew: normalize(formData.installedNew),
+    installedTotal: normalize(formData.installedTotal),
+    saleExisting: "",
+    saleNew: normalize(formData.saleNew),
+    saleTotal: normalize(formData.saleTotal),
+    innerLineNumber: "",
+    contractType: "",
+    contractCapacity: "",
+    boundaryVoltage: normalize(formData.boundaryVoltage),
+    parallelPointVoltage: normalize(formData.parallelPointVoltage),
+    estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
+    relatedCaseNumber: "",
+    otherNotes: normalizedOtherNotes,
+    applicationDateRoc: rocDateString(formData.applicationDate)
+  };
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function xmlValue(value) {
+  const normalized = String(value ?? "");
+  if (!normalized) return "";
+  return normalized
+    .split("\n")
+    .map((line) => escapeXml(line))
+    .join("</w:t><w:br/><w:t>");
+}
+
+const CONTACT_PERSON_CELL_PATTERN =
+  /<w:tc\b(?:(?!<\/w:tc>)[\s\S])*?\{\{contactPerson\}\}(?:(?!<\/w:tc>)[\s\S])*?<\/w:tc>/g;
+const CONTACT_PERSON_SPACING =
+  '<w:spacing w:before="180" w:after="0" w:line="240" w:lineRule="exact"/>';
+
+function adjustContactPersonCell(cellXml) {
+  let next = cellXml;
+
+  if (next.includes("<w:tcMar>")) {
+    next = next
+      .replace(/<w:top w:w="\d+" w:type="dxa"\/>/, '<w:top w:w="120" w:type="dxa"/>')
+      .replace(/<w:bottom w:w="\d+" w:type="dxa"\/>/, '<w:bottom w:w="120" w:type="dxa"/>');
+  } else {
+    next = next.replace(
+      "</w:tcPr>",
+      '<w:tcMar><w:top w:w="120" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tcMar></w:tcPr>'
+    );
+  }
+
+  if (next.includes("<w:pPr>")) {
+    if (/<w:spacing\b[^>]*\/>/.test(next)) {
+      next = next.replace(/<w:spacing\b[^>]*\/>/, CONTACT_PERSON_SPACING);
+    } else {
+      next = next.replace("<w:pPr>", `<w:pPr>${CONTACT_PERSON_SPACING}`);
+    }
+  } else {
+    next = next.replace("<w:p>", `<w:p><w:pPr>${CONTACT_PERSON_SPACING}</w:pPr>`);
+  }
+
+  if (!next.includes('<w:vAlign w:val="center"/>')) {
+    next = next.replace("</w:tcPr>", '<w:vAlign w:val="center"/></w:tcPr>');
+  }
+
+  return next;
+}
+
+function adjustContactPersonRows(documentXml) {
+  return documentXml.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (rowXml) => {
+    const isContactRow =
+      rowXml.includes("{{contactPerson}}") ||
+      (rowXml.includes("<w:vMerge/>") && rowXml.includes("連絡電話"));
+
+    if (!isContactRow) return rowXml;
+
+    return rowXml.replace(
+      /<w:trHeight w:val="(\d+)"\/>/g,
+      '<w:trHeight w:val="$1" w:hRule="exact"/>'
+    );
+  });
+}
+
+function applyTemplateLayoutFixes(documentXml) {
+  return adjustContactPersonRows(
+    documentXml.replace(CONTACT_PERSON_CELL_PATTERN, adjustContactPersonCell)
+  );
+}
+
+async function renderDocxBuffer(formData) {
+  const baseUrl = window.location.href.endsWith("/") ? window.location.href : `${window.location.href}/`;
+  const templateUrl = new URL("./official-template-fillable.docx", baseUrl);
+  const templateBytes = await fetch(templateUrl).then((response) => response.arrayBuffer());
+  const zip = new PizZip(templateBytes);
+  let documentXml = zip.file("word/document.xml").asText();
+  const payload = buildDocumentPayload(formData);
+
+  documentXml = applyTemplateLayoutFixes(documentXml);
+
+  for (const [key, value] of Object.entries(payload)) {
+    documentXml = documentXml.replaceAll(`{{${key}}}`, xmlValue(value));
+  }
+
+  zip.file("word/document.xml", documentXml);
+  return zip.generate({ type: "uint8array" });
+}
+
 function PreviewItem({ label, value }) {
   return (
     <div className="preview-item">
@@ -128,19 +275,10 @@ export default function Page() {
     setStatus("正在產出已填好的官方 Word...");
 
     try {
-      const response = await fetch("/api/export/official-docx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ ...result.data, exportFormat: "docx" })
+      const docxBuffer = await renderDocxBuffer({ ...result.data, exportFormat: "docx" });
+      const blob = new Blob([docxBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

@@ -4,6 +4,7 @@
 .openai
 node_modules
 npm-debug.log*
+wasm
 
 AGENTS.md
 HEARTBEAT.md
