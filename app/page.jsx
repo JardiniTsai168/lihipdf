@@ -225,6 +225,12 @@ function PreviewItem({ label, value }) {
   );
 }
 
+function countFilledFields(formData, fields) {
+  return fields.reduce((total, [name]) => {
+    return normalize(formData[name]) ? total + 1 : total;
+  }, 0);
+}
+
 export default function Page() {
   const [form, setForm] = useState(CASE_FORM_DEFAULTS);
   const [mounted, setMounted] = useState(false);
@@ -243,6 +249,12 @@ export default function Page() {
 
   const validation = validateCaseForm(form);
   const issues = summarizeIssues(validation);
+  const totalFields = sections.reduce((sum, section) => sum + section.fields.length, 0);
+  const filledFields = sections.reduce(
+    (sum, section) => sum + countFilledFields(form, section.fields),
+    0
+  );
+  const completionRate = Math.round((filledFields / totalFields) * 100);
 
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -300,16 +312,28 @@ export default function Page() {
     <main className="page-shell">
       <section className="hero-card">
         <p className="eyebrow">Solar MVP</p>
-        <h1>lihiPDF 單一表單 MVP</h1>
+        <h1>一頁填完，直接匯出官方 Word</h1>
         <p className="hero-text">
-          先做第一份太陽能送審表單。輸入一次案件資料，直接產出已填好的官方 Word，先求可用 MVP。
+          先把第一份太陽能送審表單做順。照著 3 步填，最後下載已填好的官方 Word。
         </p>
-        <div className="action-row">
+        <div className="hero-meta">
+          <div className="progress-card">
+            <span>完成度</span>
+            <strong>{filledFields} / {totalFields}</strong>
+            <em>{completionRate}%</em>
+          </div>
+          <div className="progress-card">
+            <span>目前狀態</span>
+            <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
+            <em>{issues.length === 0 ? "欄位已補齊" : "先把缺漏補完"}</em>
+          </div>
+        </div>
+        <div className="action-row hero-actions">
           <button type="button" className="primary" onClick={exportDocx} disabled={busy}>
             {busy ? "匯出中..." : "匯出官方 Word"}
           </button>
           <button type="button" className="secondary" onClick={applyCompanyDefaults}>
-            套用公司預設到聯絡資訊
+            套用公司資料到聯絡人
           </button>
           <button type="button" className="ghost" onClick={clearDraft}>
             清空草稿
@@ -320,12 +344,50 @@ export default function Page() {
         </p>
       </section>
 
-      <div className="layout-grid">
-        <form className="form-stack">
-          {sections.map((section) => (
+      <section className="panel quick-panel">
+        <div className="panel-head">
+          <h2>先看這裡</h2>
+          <p>先填公司資料，再填案件資料，最後確認容量與日期。缺的欄位會列在下面。</p>
+        </div>
+        <div className="quick-grid">
+          <PreviewItem label="設置者名稱" value={form.ownerName} />
+          <PreviewItem label="案件地址" value={form.siteAddress} />
+          <PreviewItem label="聯絡人" value={form.contactPerson} />
+          <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
+        </div>
+
+        <div className="validation-card inline-validation">
+          <h3>匯出前檢查</h3>
+          {issues.length === 0 ? (
+            <p className="valid">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
+          ) : (
+            <ul>
+              {issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <form className="form-stack">
+        {sections.map((section, index) => {
+          const filledCount = countFilledFields(form, section.fields);
+          const totalCount = section.fields.length;
+
+          return (
             <section className="panel" key={section.title}>
               <div className="panel-head">
-                <h2>{section.title}</h2>
+                <div className="section-title-row">
+                  <div>
+                    <p className="section-step">STEP {index + 1}</p>
+                    <h2>{section.title}</h2>
+                  </div>
+                  <div className="section-meter">
+                    <strong>{filledCount} / {totalCount}</strong>
+                    <span>已填欄位</span>
+                  </div>
+                </div>
                 <p>{section.description}</p>
               </div>
               <div className="fields-grid">
@@ -362,37 +424,9 @@ export default function Page() {
                 ))}
               </div>
             </section>
-          ))}
-        </form>
-
-        <aside className="panel preview-panel">
-          <div className="panel-head">
-            <h2>預覽摘要</h2>
-            <p>匯出前先看一次案件重點，正式送審前仍請自行確認欄位內容。</p>
-          </div>
-          <div className="preview-list">
-            <PreviewItem label="文件" value={form.documentTitle} />
-            <PreviewItem label="設置者名稱" value={form.ownerName} />
-            <PreviewItem label="設置場所或地點" value={form.siteAddress} />
-            <PreviewItem label="連絡人" value={form.contactPerson} />
-            <PreviewItem label="裝置容量_新增設_瓩" value={form.installedNew} />
-            <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
-          </div>
-
-          <div className="validation-card">
-            <h3>匯出前檢查</h3>
-            {issues.length === 0 ? (
-              <p className="valid">可匯出。送審前請再確認欄位內容，並自行另存 PDF。</p>
-            ) : (
-              <ul>
-                {issues.map((issue) => (
-                  <li key={issue}>{issue}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
-      </div>
+          );
+        })}
+      </form>
     </main>
   );
 }
