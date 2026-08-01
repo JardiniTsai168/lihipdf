@@ -225,6 +225,27 @@ function PreviewItem({ label, value }) {
   );
 }
 
+function buildSectionSnapshot(formData) {
+  return [
+    {
+      title: "公司預設",
+      value: normalize(formData.companyName) || "先填公司資料"
+    },
+    {
+      title: "案件主體",
+      value: normalize(formData.ownerName) || "先填設置者名稱"
+    },
+    {
+      title: "案件地點",
+      value: normalize(formData.siteAddress) || "先填設置場所或地點"
+    },
+    {
+      title: "容量重點",
+      value: normalize(formData.installedNew) ? `${formData.installedNew} kW` : "先填新增設容量"
+    }
+  ];
+}
+
 function countFilledFields(formData, fields) {
   return fields.reduce((total, [name]) => {
     return normalize(formData[name]) ? total + 1 : total;
@@ -255,6 +276,7 @@ export default function Page() {
     0
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
+  const sectionSnapshot = buildSectionSnapshot(form);
 
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -344,89 +366,101 @@ export default function Page() {
         </p>
       </section>
 
-      <section className="panel quick-panel">
-        <div className="panel-head">
-          <h2>先看這裡</h2>
-          <p>先填公司資料，再填案件資料，最後確認容量與日期。缺的欄位會列在下面。</p>
-        </div>
-        <div className="quick-grid">
-          <PreviewItem label="設置者名稱" value={form.ownerName} />
-          <PreviewItem label="案件地址" value={form.siteAddress} />
-          <PreviewItem label="聯絡人" value={form.contactPerson} />
-          <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
-        </div>
+      <div className="workspace-grid">
+        <form className="form-stack">
+          {sections.map((section, index) => {
+            const filledCount = countFilledFields(form, section.fields);
+            const totalCount = section.fields.length;
 
-        <div className="validation-card inline-validation">
-          <h3>匯出前檢查</h3>
-          {issues.length === 0 ? (
-            <p className="valid">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
-          ) : (
-            <ul>
-              {issues.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <form className="form-stack">
-        {sections.map((section, index) => {
-          const filledCount = countFilledFields(form, section.fields);
-          const totalCount = section.fields.length;
-
-          return (
-            <section className="panel" key={section.title}>
-              <div className="panel-head">
-                <div className="section-title-row">
-                  <div>
-                    <p className="section-step">STEP {index + 1}</p>
-                    <h2>{section.title}</h2>
+            return (
+              <section className="panel" key={section.title}>
+                <div className="panel-head">
+                  <div className="section-title-row">
+                    <div>
+                      <p className="section-step">STEP {index + 1}</p>
+                      <h2>{section.title}</h2>
+                    </div>
+                    <div className="section-meter">
+                      <strong>{filledCount} / {totalCount}</strong>
+                      <span>已填欄位</span>
+                    </div>
                   </div>
-                  <div className="section-meter">
-                    <strong>{filledCount} / {totalCount}</strong>
-                    <span>已填欄位</span>
-                  </div>
+                  <p>{section.description}</p>
                 </div>
-                <p>{section.description}</p>
-              </div>
-              <div className="fields-grid">
-                {section.fields.map(([name, label, type]) => (
-                  <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
-                    <span>{label}</span>
-                    {type === "select" ? (
-                      <select
-                        aria-label={label}
-                        value={form[name]}
-                        onChange={(event) => updateField(name, event.target.value)}
-                      >
-                        <option value="屋頂">屋頂</option>
-                        <option value="地面">地面</option>
-                        <option value="水面">水面</option>
-                      </select>
-                    ) : type === "textarea" ? (
-                      <textarea
-                        aria-label={label}
-                        rows={4}
-                        value={form[name]}
-                        onChange={(event) => updateField(name, event.target.value)}
-                      />
-                    ) : (
-                      <input
-                        aria-label={label}
-                        type={type}
-                        inputMode={type === "number" ? "decimal" : undefined}
-                        value={form[name]}
-                        onChange={(event) => updateField(name, event.target.value)}
-                      />
-                    )}
-                  </label>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </form>
+                <div className="fields-grid">
+                  {section.fields.map(([name, label, type]) => (
+                    <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
+                      <span>{label}</span>
+                      {type === "select" ? (
+                        <select
+                          aria-label={label}
+                          value={form[name]}
+                          onChange={(event) => updateField(name, event.target.value)}
+                        >
+                          <option value="屋頂">屋頂</option>
+                          <option value="地面">地面</option>
+                          <option value="水面">水面</option>
+                        </select>
+                      ) : type === "textarea" ? (
+                        <textarea
+                          aria-label={label}
+                          rows={5}
+                          value={form[name]}
+                          onChange={(event) => updateField(name, event.target.value)}
+                        />
+                      ) : (
+                        <input
+                          aria-label={label}
+                          type={type}
+                          inputMode={type === "number" ? "decimal" : undefined}
+                          value={form[name]}
+                          onChange={(event) => updateField(name, event.target.value)}
+                        />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </form>
+
+        <aside className="sidebar-stack">
+          <section className="panel quick-panel sidebar-panel">
+            <div className="panel-head">
+              <h2>先看這裡</h2>
+              <p>左邊照著填，右邊隨時看摘要。先把缺漏補完，再按匯出就好。</p>
+            </div>
+            <div className="snapshot-grid">
+              {sectionSnapshot.map((item) => (
+                <div className="snapshot-card" key={item.title}>
+                  <span>{item.title}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="quick-grid">
+              <PreviewItem label="設置者名稱" value={form.ownerName} />
+              <PreviewItem label="案件地址" value={form.siteAddress} />
+              <PreviewItem label="聯絡人" value={form.contactPerson} />
+              <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
+            </div>
+
+            <div className="validation-card inline-validation">
+              <h3>匯出前檢查</h3>
+              {issues.length === 0 ? (
+                <p className="valid">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
+              ) : (
+                <ul>
+                  {issues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        </aside>
+      </div>
     </main>
   );
 }

@@ -25,7 +25,7 @@ describe("single-form MVP page", () => {
     });
 
     expect(screen.getByText("先看這裡")).toBeInTheDocument();
-    expect(screen.getByText("吳威霖")).toBeInTheDocument();
-    expect(screen.getByText("高雄市鼓山區明德路31號")).toBeInTheDocument();
+    expect(screen.getAllByText("吳威霖").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("高雄市鼓山區明德路31號").length).toBeGreaterThan(0);
   });
 });
