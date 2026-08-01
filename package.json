@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && rm -rf dist && cp -R out dist",
+    "build": "next build && node scripts/build-sites-dist.mjs",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest"
