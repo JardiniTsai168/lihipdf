@@ -299,6 +299,23 @@ function PreviewItem({ label, value }) {
   );
 }
 
+const REQUIRED_FIELDS = new Set([
+  "ownerName",
+  "ownerPhone",
+  "ownerAddress",
+  "siteAddress",
+  "contactPerson",
+  "contactPhone",
+  "contactAddress",
+  "installedNew",
+  "installedTotal",
+  "saleNew",
+  "saleTotal",
+  "boundaryVoltage",
+  "parallelPointVoltage",
+  "estimatedParallelDate"
+]);
+
 function buildSectionSnapshot(formData) {
   return [
     {
@@ -324,59 +341,70 @@ function countFilledFields(formData, fields) {
   }, 0);
 }
 
+function fieldState(name, value) {
+  if (!REQUIRED_FIELDS.has(name)) return normalize(value) ? "filled" : "optional";
+  return normalize(value) ? "filled" : "missing";
+}
+
 function renderField(name, label, type, form, updateField, variant = "core") {
   const placeholder = FIELD_HINTS[name];
   const hint = FIELD_HINTS[name];
   const badgeLabel = variant === "detail" ? "補充" : "主要";
+  const state = fieldState(name, form[name]);
+  const isRequired = REQUIRED_FIELDS.has(name);
 
   return (
-    <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
-      <div className="field-head">
-        <span>{label}</span>
-        <em className={`field-badge ${variant}`}>{badgeLabel}</em>
+    <label className={`field ${type === "textarea" ? "field-wide" : ""} is-${state}`} key={name}>
+      <div className="field-rail">
+        <div className={`field-state ${state}`} aria-hidden="true" />
       </div>
-      {hint ? <p className="field-note">{hint}</p> : null}
-      {type === "solarCategory" ? (
-        <div className="choice-group" role="radiogroup" aria-label={label}>
-          {["屋頂", "地面", "水面"].map((option) => (
-            <button
-              type="button"
-              key={option}
-              className={`choice-pill ${form[name] === option ? "is-active" : ""}`}
-              onClick={() => updateField(name, option)}
-            >
-              {option}
-            </button>
-          ))}
+      <div className="field-frame">
+        <div className="field-head">
+          <span>
+            {label}
+            {isRequired ? <i className="required-dot">必填</i> : null}
+          </span>
+          <div className="field-meta">
+            <em className={`field-badge ${variant}`}>{badgeLabel}</em>
+            <b className={`field-status ${state}`}>
+              {state === "filled" ? "已填" : state === "missing" ? "待補" : "可留白"}
+            </b>
+          </div>
         </div>
-      ) : type === "select" ? (
-        <select
-          aria-label={label}
-          value={form[name]}
-          onChange={(event) => updateField(name, event.target.value)}
-        >
-          <option value="屋頂">屋頂</option>
-          <option value="地面">地面</option>
-          <option value="水面">水面</option>
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          aria-label={label}
-          rows={5}
-          placeholder={placeholder}
-          value={form[name]}
-          onChange={(event) => updateField(name, event.target.value)}
-        />
-      ) : (
-        <input
-          aria-label={label}
-          type={type}
-          inputMode={type === "number" ? "decimal" : undefined}
-          placeholder={placeholder}
-          value={form[name]}
-          onChange={(event) => updateField(name, event.target.value)}
-        />
-      )}
+        {hint ? <p className="field-note">{hint}</p> : null}
+        {type === "solarCategory" ? (
+          <div className="choice-group" role="radiogroup" aria-label={label}>
+            {["屋頂", "地面", "水面"].map((option) => (
+              <button
+                type="button"
+                key={option}
+                className={`choice-pill ${form[name] === option ? "is-active" : ""}`}
+                onClick={() => updateField(name, option)}
+              >
+                <span className="choice-mark" aria-hidden="true">{form[name] === option ? "■" : "□"}</span>
+                {option}
+              </button>
+            ))}
+          </div>
+        ) : type === "textarea" ? (
+          <textarea
+            aria-label={label}
+            rows={5}
+            placeholder={placeholder}
+            value={form[name]}
+            onChange={(event) => updateField(name, event.target.value)}
+          />
+        ) : (
+          <input
+            aria-label={label}
+            type={type}
+            inputMode={type === "number" ? "decimal" : undefined}
+            placeholder={placeholder}
+            value={form[name]}
+            onChange={(event) => updateField(name, event.target.value)}
+          />
+        )}
+      </div>
     </label>
   );
 }
@@ -410,6 +438,10 @@ export default function Page() {
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
   const sectionSnapshot = buildSectionSnapshot(form);
+  const missingRequired = [...REQUIRED_FIELDS].filter((name) => !normalize(form[name]));
+  const topMissing = missingRequired
+    .slice(0, 5)
+    .map((name) => sections.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
 
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -467,12 +499,19 @@ export default function Page() {
     <main className="page-shell">
       <div className="shell">
         <section className="hero">
-          <div className="eyebrow">Solar Workflow MVP</div>
-          <h1>一頁填完，直接匯出官方 Word</h1>
-          <div className="document-note">再生能源發電設備併聯審查申請表</div>
-          <p>
-            先把案件核心資料填完，再直接匯出台電用的 Word。畫面只保留真的會用到的欄位，避免邊填邊找。
-          </p>
+          <div className="hero-copy">
+            <div className="eyebrow">Solar Parallel Review Workflow</div>
+            <h1>把併聯審查表單，整理成真的看得懂的工作頁</h1>
+            <div className="document-note">再生能源發電設備併聯審查申請表</div>
+            <p>
+              這版直接比照你給的參考頁邏輯做成閱讀型流程。主欄位留在前段，補充欄位往後收，
+              讓送審資料可以一路往下填，不用在一大坨表單裡迷路。
+            </p>
+          </div>
+          <div className="hero-ribbon">
+            <div className="hero-ribbon-label">114 年 03 月 11 日修正版欄位結構</div>
+            <div className="hero-ribbon-value">以台電送審順序整理</div>
+          </div>
           <div className="overview">
             {sectionSnapshot.map((item) => (
               <div className="overview-card" key={item.title}>
@@ -481,76 +520,57 @@ export default function Page() {
               </div>
             ))}
           </div>
-          <div className="overview">
-            <div className="overview-card">
-              <span>完成度</span>
-              <strong>{filledFields} / {totalFields} ({completionRate}%)</strong>
-            </div>
-            <div className="overview-card">
-              <span>目前狀態</span>
-              <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
-            </div>
-            <div className="overview-card">
-              <span>可匯出格式</span>
-              <strong>官方 Word</strong>
-            </div>
-          </div>
-          <div className="actions">
-            <button className="primary" type="button" onClick={exportDocx} disabled={busy}>
-              {busy ? "匯出中..." : "匯出官方 Word"}
-            </button>
-            <button className="secondary" type="button" onClick={applyCompanyDefaults}>
-              套用公司資料
-            </button>
-            <button className="danger" type="button" onClick={clearDraft}>
-              清空草稿
-            </button>
-          </div>
-          <div className="status" role="status">{status}</div>
         </section>
 
-        <form>
-          {sections.map((section, index) => {
+        <div className="workspace">
+          <form className="form-stack">
+            {sections.map((section, index) => {
             const detailFields = section.detailFields ?? [];
             const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
             const totalCount = section.fields.length + detailFields.length;
 
             return (
               <section className="section" key={section.title}>
-                <div className="section-header">
-                  <h2>{index + 1}. {section.title}</h2>
-                  <p>{section.description}</p>
+                <div className="section-index">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
                 </div>
-                <div className={`section-body ${section.title === "案件補充與申請選項" ? "tight" : ""}`}>
+                <div className={`section-card ${section.title === "案件補充與申請選項" ? "is-tight" : ""}`}>
+                  <div className="section-header">
+                    <div>
+                      <div className="section-kicker">Step {index + 1}</div>
+                      <h2>{section.title}</h2>
+                    </div>
+                    <div className="section-progress">
+                      <span>本段完成度</span>
+                      <strong>{filledCount} / {totalCount}</strong>
+                    </div>
+                  </div>
+                  <p className="section-description">{section.description}</p>
                   {section.staticItems?.length ? (
-                    <div className="grid cols-2">
+                    <div className="static-grid">
                       {section.staticItems.map(([label, value]) => (
-                        <div className="soft-panel" key={label}>
+                        <div className="static-card" key={label}>
                           <div className="hint">{label}</div>
                           <div className="value-chip">{value}</div>
                         </div>
                       ))}
                     </div>
                   ) : null}
-
-                  <div className="overview-card section-progress">
-                    <span>本段完成度</span>
-                    <strong>{filledCount} / {totalCount}</strong>
-                  </div>
-
                   <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
                     {section.fields.map(([name, label, type]) =>
                       renderField(name, label, type, form, updateField, "core")
                     )}
                   </div>
-
-                  {section.note ? <div className="soft-panel"><div className="hint">{section.note}</div></div> : null}
-
+                  {section.note ? (
+                    <div className="section-note">
+                      <div className="hint">{section.note}</div>
+                    </div>
+                  ) : null}
                   {detailFields.length > 0 ? (
                     <details className="detail-shell">
                       <summary>補充欄位 ({countFilledFields(form, detailFields)} / {detailFields.length})</summary>
-                      <div className="section-body tight">
-                        <div className="hint">這些欄位留給進階案件或台電補件時再填，不先塞進主流程。</div>
+                      <div className="detail-panel">
+                        <div className="hint">這些欄位留給進階案件或台電補件時再填，不先擠進主流程。</div>
                         <div className="grid cols-2">
                           {detailFields.map(([name, label, type]) =>
                             renderField(name, label, type, form, updateField, "detail")
@@ -563,42 +583,104 @@ export default function Page() {
               </section>
             );
           })}
-          <section className="section">
-            <div className="section-header">
-              <h2>8. 匯出前檢查</h2>
-              <p>先看這裡</p>
-              <p>最後確認目前草稿缺什麼，避免匯出後還要回頭找欄位。</p>
-            </div>
-            <div className="section-body tight">
-              <div className="grid cols-2">
+            <section className="section final-check">
+              <div className="section-index">
+                <span>08</span>
+              </div>
+              <div className="section-card is-tight">
+                <div className="section-header">
+                  <div>
+                    <div className="section-kicker">Final Check</div>
+                    <h2>匯出前檢查</h2>
+                  </div>
+                  <div className="section-progress">
+                    <span>目前狀態</span>
+                    <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
+                  </div>
+                </div>
+                <p className="section-description">最後確認目前草稿缺什麼，避免匯出後還要回頭找欄位。</p>
+                <div className="grid cols-2">
                 <PreviewItem label="設置者名稱" value={form.ownerName} />
                 <PreviewItem label="案件地址" value={form.siteAddress} />
                 <PreviewItem label="聯絡人" value={form.contactPerson} />
                 <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
+                </div>
+                <div className="grid cols-2 review-grid">
+                  <div className="review-card">
+                    <div className="hint">填寫提醒</div>
+                    <ul className="footer-note">
+                      <li>申請日期可先留白，最後再補。</li>
+                      <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
+                      <li>若看到舊資料，先按一次清空草稿再重填。</li>
+                    </ul>
+                  </div>
+                  <div className="review-card">
+                    <div className="hint">匯出前檢查</div>
+                    {issues.length === 0 ? (
+                      <p className="footer-note">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
+                    ) : (
+                      <ul className="footer-note">
+                        {issues.map((issue) => (
+                          <li key={issue}>{issue}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="soft-panel">
-                <div className="hint">填寫提醒</div>
-                <ul className="footer-note">
-                  <li>申請日期可先留白，最後再補。</li>
-                  <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
-                  <li>若看到舊資料，先按一次清空草稿再重填。</li>
+            </section>
+          </form>
+
+          <aside className="sidebar">
+            <section className="sidebar-card summary-card">
+              <div className="sidebar-kicker">案件摘要</div>
+              <h3>先填主要欄位，再匯出官方 Word</h3>
+              <div className="summary-grid">
+                <div className="summary-row">
+                  <span>完成度</span>
+                  <strong>{filledFields} / {totalFields} ({completionRate}%)</strong>
+                </div>
+                <div className="summary-row">
+                  <span>必填未完成</span>
+                  <strong>{missingRequired.length} 項</strong>
+                </div>
+                <div className="summary-row">
+                  <span>可匯出格式</span>
+                  <strong>官方 Word</strong>
+                </div>
+              </div>
+              <div className="status" role="status">{status || "填寫中，草稿會自動留在這台裝置。"}</div>
+            </section>
+
+            <section className="sidebar-card action-card">
+              <div className="sidebar-kicker">操作列</div>
+              <div className="actions">
+                <button className="primary" type="button" onClick={exportDocx} disabled={busy}>
+                  {busy ? "匯出中..." : "匯出官方 Word"}
+                </button>
+                <button className="secondary" type="button" onClick={applyCompanyDefaults}>
+                  套用公司資料
+                </button>
+                <button className="danger" type="button" onClick={clearDraft}>
+                  清空草稿
+                </button>
+              </div>
+            </section>
+
+            <section className="sidebar-card issue-card">
+              <div className="sidebar-kicker">目前缺口</div>
+              {topMissing.length > 0 ? (
+                <ul className="issue-list">
+                  {topMissing.map((label) => (
+                    <li key={label}>{label}</li>
+                  ))}
                 </ul>
-              </div>
-              <div className="soft-panel">
-                <div className="hint">匯出前檢查</div>
-                {issues.length === 0 ? (
-                  <p className="footer-note">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
-                ) : (
-                  <ul className="footer-note">
-                    {issues.map((issue) => (
-                      <li key={issue}>{issue}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </section>
-        </form>
+              ) : (
+                <p className="footer-note">主要欄位都填得差不多了，可以直接匯出確認版面。</p>
+              )}
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
   );

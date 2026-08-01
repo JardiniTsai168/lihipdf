@@ -8,7 +8,7 @@ describe("single-form MVP page", () => {
   it("renders a direct new-case flow with core fields", () => {
     render(<Page />);
 
-    expect(screen.getByRole("heading", { name: "一頁填完，直接匯出官方 Word" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "把併聯審查表單，整理成真的看得懂的工作頁" })).toBeInTheDocument();
     expect(screen.getByLabelText("設置者名稱")).toBeInTheDocument();
     expect(screen.getByLabelText("裝置容量_新增設_瓩")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "匯出官方 Word" })).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe("single-form MVP page", () => {
       target: { value: "高雄市鼓山區明德路31號" }
     });
 
-    expect(screen.getByText("先看這裡")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "先填主要欄位，再匯出官方 Word" })).toBeInTheDocument();
     expect(screen.getAllByText("吳威霖").length).toBeGreaterThan(0);
     expect(screen.getAllByText("高雄市鼓山區明德路31號").length).toBeGreaterThan(0);
   });

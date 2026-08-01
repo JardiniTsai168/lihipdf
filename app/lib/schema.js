@@ -47,6 +47,19 @@ const numericString = z
 
 const optionalNumericString = z.union([z.string().trim().length(0), numericString]);
 
+const REQUIRED_MESSAGES = {
+  ownerName: "請填寫設置者名稱",
+  ownerPhone: "請填寫連絡電話",
+  ownerAddress: "請填寫通訊處",
+  siteAddress: "請填寫設置場所或地點",
+  contactPerson: "請填寫連絡人",
+  contactPhone: "請填寫連絡人電話",
+  contactAddress: "請填寫連絡人通訊處",
+  boundaryVoltage: "請填寫責任分界點電壓",
+  parallelPointVoltage: "請填寫併聯點電壓",
+  estimatedParallelDate: "請填寫預計併聯日期"
+};
+
 const caseFormSchema = z.object({
   documentTitle: z.string(),
   exportFormat: z.enum(["pdf", "docx"]),
@@ -58,15 +71,15 @@ const caseFormSchema = z.object({
   caseNumber: z.string(),
   districtOffice: z.string(),
   applicationDate: z.string(),
-  ownerName: z.string().trim().min(1, "ownerName is required"),
+  ownerName: z.string().trim().min(1, REQUIRED_MESSAGES.ownerName),
   principalName: z.string(),
   electricNumber: z.string(),
-  ownerPhone: z.string().trim().min(1, "ownerPhone is required"),
-  ownerAddress: z.string().trim().min(1, "ownerAddress is required"),
-  siteAddress: z.string().trim().min(1, "siteAddress is required"),
-  contactPerson: z.string().trim().min(1, "contactPerson is required"),
-  contactPhone: z.string().trim().min(1, "contactPhone is required"),
-  contactAddress: z.string().trim().min(1, "contactAddress is required"),
+  ownerPhone: z.string().trim().min(1, REQUIRED_MESSAGES.ownerPhone),
+  ownerAddress: z.string().trim().min(1, REQUIRED_MESSAGES.ownerAddress),
+  siteAddress: z.string().trim().min(1, REQUIRED_MESSAGES.siteAddress),
+  contactPerson: z.string().trim().min(1, REQUIRED_MESSAGES.contactPerson),
+  contactPhone: z.string().trim().min(1, REQUIRED_MESSAGES.contactPhone),
+  contactAddress: z.string().trim().min(1, REQUIRED_MESSAGES.contactAddress),
   solarCategory: z.enum(["屋頂", "地面", "水面"]),
   installedExisting: optionalNumericString,
   installedNew: numericString,
@@ -77,9 +90,9 @@ const caseFormSchema = z.object({
   innerLineNumber: z.string(),
   contractType: z.string(),
   contractCapacity: z.string(),
-  boundaryVoltage: z.string().trim().min(1, "boundaryVoltage is required"),
-  parallelPointVoltage: z.string().trim().min(1, "parallelPointVoltage is required"),
-  estimatedParallelDate: z.string().trim().min(1, "estimatedParallelDate is required"),
+  boundaryVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.boundaryVoltage),
+  parallelPointVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.parallelPointVoltage),
+  estimatedParallelDate: z.string().trim().min(1, REQUIRED_MESSAGES.estimatedParallelDate),
   relatedCaseNumber: z.string(),
   otherNotes: z.string()
 });

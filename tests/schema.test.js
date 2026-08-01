@@ -50,6 +50,6 @@ describe("case form schema", () => {
         ownerPhone: "",
         siteAddress: ""
       })
-    ).toThrow(/ownerName|ownerPhone|siteAddress/);
+    ).toThrow(/請填寫設置者名稱|請填寫連絡電話|請填寫設置場所或地點/);
   });
 });
