@@ -16,6 +16,8 @@ describe("document payload", () => {
       contactPerson: "黃昭華",
       contactPhone: "07-7338588",
       contactAddress: "高雄市鳥松區大同路2-58號",
+      deviceType: "第三型",
+      energyCategory: "太陽光電",
       solarCategory: "屋頂",
       installedExisting: "3",
       installedNew: "9",
@@ -46,8 +48,12 @@ describe("document payload", () => {
     expect(payload.contractType).toBe("低壓電力");
     expect(payload.saleMode).toBe("轉供自用(第二、三型)");
     expect(payload.relatedCaseNumber).toBe("A-0007");
+    expect(payload.deviceTypeLine).toContain("■第三型");
+    expect(payload.energyCategoryLine).toContain("■太陽光電");
     expect(payload.solarCategoryLine).toContain("■屋頂");
     expect(payload.applicationDateRoc).toBe("115 年 7 月 30 日");
-    expect(payload.otherNotes).toBe("補充備註");
+    expect(payload.otherNotes).toContain("細部協商");
+    expect(payload.otherNotes).toContain("外線設計");
+    expect(payload.otherNotes).toContain("補充備註");
   });
 });

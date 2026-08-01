@@ -7,7 +7,13 @@ import { fileURLToPath } from "node:url";
 
 import PizZip from "pizzip";
 
-import { DEFAULT_OTHER_NOTES, parseCaseForm } from "./schema.js";
+import {
+  DEFAULT_OTHER_NOTES,
+  DEVICE_TYPE_OPTIONS,
+  ENERGY_CATEGORY_OPTIONS,
+  INSTALLATION_CATEGORY_GROUPS,
+  parseCaseForm
+} from "./schema.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "../..");
@@ -45,6 +51,32 @@ function checkboxLine(selected, value, label) {
   return `${selected === value ? "■" : "□"}${label}`;
 }
 
+function deviceTypeLine(value) {
+  return DEVICE_TYPE_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
+}
+
+function energyCategoryLine(value) {
+  return ENERGY_CATEGORY_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
+}
+
+function installationCategoryLine(category, selected) {
+  const options = INSTALLATION_CATEGORY_GROUPS[category] ?? [];
+  return options.map((option) => checkboxLine(selected, option, option)).join("  ");
+}
+
+function otherNotesBlock(formData) {
+  const lines = [];
+  const detailReviewLine = `配電級再生能源${checkboxLine(formData.detailReview, "需", "需")}${checkboxLine(formData.detailReview, "不需", "不需")} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${normalize(formData.detailReviewDate)}`;
+  const externalDesignLine = `配電級再生能源${checkboxLine(formData.externalDesign, "需", "需")}${checkboxLine(formData.externalDesign, "不需", "不需")} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${normalize(formData.externalDesignDate)}`;
+
+  lines.push(detailReviewLine, externalDesignLine);
+
+  const notes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+  if (notes) lines.push(notes);
+
+  return lines.join("\n");
+}
+
 export function buildDocumentPayload(data) {
   const formData = parseCaseForm(data);
 
@@ -60,7 +92,12 @@ export function buildDocumentPayload(data) {
     contactPerson: normalize(formData.contactPerson),
     contactAddress: normalize(formData.contactAddress),
     contactPhone: normalize(formData.contactPhone),
+    deviceTypeLine: deviceTypeLine(formData.deviceType),
+    energyCategoryLine: energyCategoryLine(formData.energyCategory),
     solarCategoryLine: solarCategoryLine(formData.solarCategory),
+    windCategoryLine: installationCategoryLine("風力", formData.solarCategory),
+    biomassCategoryLine: installationCategoryLine("生質能", formData.solarCategory),
+    wasteCategoryLine: installationCategoryLine("廢棄物", formData.solarCategory),
     installedExisting: normalize(formData.installedExisting),
     installedNew: normalize(formData.installedNew),
     installedTotal: normalize(formData.installedTotal),
@@ -76,7 +113,7 @@ export function buildDocumentPayload(data) {
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: normalize(formData.otherNotes).replace(/\r/g, "\n") || DEFAULT_OTHER_NOTES,
+    otherNotes: otherNotesBlock(formData) || DEFAULT_OTHER_NOTES,
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }
@@ -169,6 +206,30 @@ function escapeRegex(value) {
 
 function applyTemplateSelectionState(documentXml, payload) {
   const replacements = [
+    [
+      /[■□]第一型  [■□]第二型  [■□]第三型/g,
+      payload.deviceTypeLine
+    ],
+    [
+      /[■□]太陽光電  [■□]小水力  [■□]生質能  [■□]風力  [■□]地熱能  [■□]廢棄物  [■□]氫能  [■□]燃料電池  [■□]海洋能/g,
+      payload.energyCategoryLine
+    ],
+    [
+      /太陽光電-[■□]屋頂  [■□]地面  [■□]水面/g,
+      `太陽光電-${payload.solarCategoryLine}`
+    ],
+    [
+      /風力-[■□]陸域  [■□]離岸/g,
+      `風力-${payload.windCategoryLine}`
+    ],
+    [
+      /生質能-[■□]無  [■□]有厭氧消化設備  [■□]農林植物/g,
+      `生質能-${payload.biomassCategoryLine}`
+    ],
+    [
+      /廢棄物-[■□]一般  [■□]農業/g,
+      `廢棄物-${payload.wasteCategoryLine}`
+    ],
     [
       /[■□]併聯台電外線/g,
       checkboxLine(payload.parallelMethod, "台電外線", "併聯台電外線")

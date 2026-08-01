@@ -4,9 +4,16 @@ import React from "react";
 import { useEffect, useState } from "react";
 import PizZip from "pizzip";
 
-import { CASE_FORM_DEFAULTS, validateCaseForm } from "./lib/schema";
+import {
+  ADVANCED_OPTION_CHOICES,
+  CASE_FORM_DEFAULTS,
+  DEVICE_TYPE_OPTIONS,
+  ENERGY_CATEGORY_OPTIONS,
+  INSTALLATION_CATEGORY_GROUPS,
+  validateCaseForm
+} from "./lib/schema";
 
-const STORAGE_KEY = "lihipdf_single_form_v1";
+const STORAGE_KEY = "lihipdf_single_form_v2";
 
 const sections = [
   {
@@ -34,14 +41,11 @@ const sections = [
   },
   {
     title: "設備與容量",
-    description: "設備型別、能源類別與容量欄位接著排，主欄位名稱改回比較接近 Word 的寫法。",
-    note: "設備型別與能源類別目前仍固定為太陽光電第三型，容量的既設欄位保留在補充欄位。",
-    staticItems: [
-      ["再生能源發電設備型別", "□第一型  □第二型  ■第三型"],
-      ["再生能源類別", "■太陽光電  □小水力  □生質能  □風力  □地熱能  □廢棄物  □氫能  □燃料電池  □海洋能"]
-    ],
+    description: "設備型別、能源類別與設置分類都改成可選，容量欄位接著往下填。",
     fields: [
-      ["solarCategory", "設置分類", "solarCategory"],
+      ["deviceType", "再生能源發電設備型別", "deviceType"],
+      ["energyCategory", "再生能源類別", "energyCategory"],
+      ["solarCategory", "設置分類", "installationCategory"],
       ["installedNew", "裝置容量新（增）設", "number"],
       ["installedTotal", "裝置容量合計", "number"],
       ["saleNew", "躉售容量新（增）設", "number"],
@@ -57,17 +61,15 @@ const sections = [
     description: "最後接併聯、售電、電壓、日期與補充說明，主流程就照你剛列的那串。",
     fields: [
       ["parallelMethod", "預計併聯方式", "parallelMethod"],
+      ["innerLineNumber", "電號", "text"],
+      ["contractType", "契約種別", "text"],
+      ["contractCapacity", "契約容量", "text"],
       ["saleMode", "售電方式", "saleMode"],
       ["boundaryVoltage", "責任分界點電壓", "text"],
       ["parallelPointVoltage", "併聯點電壓", "text"],
       ["estimatedParallelDate", "預計併聯日期", "date"],
       ["relatedCaseNumber", "與本案相關案件編號", "text"],
-      ["otherNotes", "其他事項", "textarea"]
-    ],
-    detailFields: [
-      ["innerLineNumber", "併聯用戶內線電號", "text"],
-      ["contractType", "契約種別", "text"],
-      ["contractCapacity", "契約容量_瓩", "text"]
+      ["otherNotes", "其他事項", "otherNotes"]
     ]
   },
   {
@@ -109,18 +111,19 @@ const FIELD_HINTS = {
   saleExisting: "沒有可留白",
   saleNew: "例：9",
   saleTotal: "例：9",
+  contractCapacity: "例：49.5",
   parallelMethod: "選擇併聯台電外線或併聯用戶內線",
   saleMode: "依申請案型選一種售電方式",
-  innerLineNumber: "若走用戶內線再填",
+  innerLineNumber: "併聯用戶內線時填寫",
   contractType: "例：低壓電力",
-  contractCapacity: "例：49.5",
   estimatedParallelDate: "例：2026-12-31",
-  relatedCaseNumber: "若有前案再填",
   companyName: "例：某某能源股份有限公司",
   companyContactPerson: "例：鄒侑廷",
   companyPhone: "例：0939-255-192",
   companyAddress: "例：高雄市前鎮區成功路88號",
   companyTaxId: "例：12345678",
+  detailReviewDate: "勾選日期",
+  externalDesignDate: "勾選日期",
   otherNotes: "若有補充說明再填"
 };
 
@@ -131,7 +134,8 @@ const FIELD_ARIA_LABELS = {
   installedNew: "裝置容量_新增設_瓩",
   installedTotal: "裝置容量_合計_瓩",
   saleNew: "躉售容量_新增設_瓩",
-  saleTotal: "躉售容量_合計_瓩"
+  saleTotal: "躉售容量_合計_瓩",
+  contractCapacity: "契約容量_瓩"
 };
 
 function loadDraft() {
@@ -171,6 +175,36 @@ function solarCategoryLine(value) {
     .join("  ");
 }
 
+function checkboxLine(selected, value, label) {
+  return `${selected === value ? "■" : "□"}${label}`;
+}
+
+function deviceTypeLine(value) {
+  return DEVICE_TYPE_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
+}
+
+function energyCategoryLine(value) {
+  return ENERGY_CATEGORY_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
+}
+
+function installationCategoryLine(category, selected) {
+  const options = INSTALLATION_CATEGORY_GROUPS[category] ?? [];
+  return options.map((option) => checkboxLine(selected, option, option)).join("  ");
+}
+
+function otherNotesBlock(formData) {
+  const lines = [];
+  const detailReviewLine = `配電級再生能源${checkboxLine(formData.detailReview, "需", "需")}${checkboxLine(formData.detailReview, "不需", "不需")} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${normalize(formData.detailReviewDate)}`;
+  const externalDesignLine = `配電級再生能源${checkboxLine(formData.externalDesign, "需", "需")}${checkboxLine(formData.externalDesign, "不需", "不需")} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${normalize(formData.externalDesignDate)}`;
+
+  lines.push(detailReviewLine, externalDesignLine);
+
+  const notes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+  if (notes) lines.push(notes);
+
+  return lines.join("\n");
+}
+
 function buildDocumentPayload(formData) {
   return {
     caseNumber: normalize(formData.caseNumber),
@@ -184,7 +218,12 @@ function buildDocumentPayload(formData) {
     contactPerson: normalize(formData.contactPerson),
     contactAddress: normalize(formData.contactAddress),
     contactPhone: normalize(formData.contactPhone),
+    deviceTypeLine: deviceTypeLine(formData.deviceType),
+    energyCategoryLine: energyCategoryLine(formData.energyCategory),
     solarCategoryLine: solarCategoryLine(formData.solarCategory),
+    windCategoryLine: installationCategoryLine("風力", formData.solarCategory),
+    biomassCategoryLine: installationCategoryLine("生質能", formData.solarCategory),
+    wasteCategoryLine: installationCategoryLine("廢棄物", formData.solarCategory),
     installedExisting: normalize(formData.installedExisting),
     installedNew: normalize(formData.installedNew),
     installedTotal: normalize(formData.installedTotal),
@@ -200,7 +239,7 @@ function buildDocumentPayload(formData) {
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: normalize(formData.otherNotes).replace(/\r/g, "\n"),
+    otherNotes: otherNotesBlock(formData),
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }
@@ -287,6 +326,30 @@ function escapeRegex(value) {
 function applyTemplateSelectionState(documentXml, payload) {
   const replacements = [
     [
+      /[■□]第一型  [■□]第二型  [■□]第三型/g,
+      payload.deviceTypeLine
+    ],
+    [
+      /[■□]太陽光電  [■□]小水力  [■□]生質能  [■□]風力  [■□]地熱能  [■□]廢棄物  [■□]氫能  [■□]燃料電池  [■□]海洋能/g,
+      payload.energyCategoryLine
+    ],
+    [
+      /太陽光電-[■□]屋頂  [■□]地面  [■□]水面/g,
+      `太陽光電-${payload.solarCategoryLine}`
+    ],
+    [
+      /風力-[■□]陸域  [■□]離岸/g,
+      `風力-${payload.windCategoryLine}`
+    ],
+    [
+      /生質能-[■□]無  [■□]有厭氧消化設備  [■□]農林植物/g,
+      `生質能-${payload.biomassCategoryLine}`
+    ],
+    [
+      /廢棄物-[■□]一般  [■□]農業/g,
+      `廢棄物-${payload.wasteCategoryLine}`
+    ],
+    [
       /[■□]併聯台電外線/g,
       checkboxLine(payload.parallelMethod, "台電外線", "併聯台電外線")
     ],
@@ -327,9 +390,12 @@ function applyTemplateSelectionState(documentXml, payload) {
 }
 
 async function renderDocxBuffer(formData) {
-  const baseUrl = window.location.href.endsWith("/") ? window.location.href : `${window.location.href}/`;
-  const templateUrl = new URL("./official-template-fillable.docx", baseUrl);
-  const templateBytes = await fetch(templateUrl).then((response) => response.arrayBuffer());
+  const templateUrl = new URL("official-template-fillable.docx", document.baseURI);
+  const response = await fetch(templateUrl);
+  if (!response.ok) {
+    throw new Error(`template fetch failed: ${response.status}`);
+  }
+  const templateBytes = await response.arrayBuffer();
   const zip = new PizZip(templateBytes);
   let documentXml = zip.file("word/document.xml").asText();
   const payload = buildDocumentPayload(formData);
@@ -373,8 +439,24 @@ const BASE_REQUIRED_FIELDS = new Set([
 function isFieldRequired(name, formData) {
   if (BASE_REQUIRED_FIELDS.has(name)) return true;
   if ((name === "saleNew" || name === "saleTotal") && formData.saleMode !== "僅併聯不躉售") return true;
-  if (name === "innerLineNumber" && formData.parallelMethod === "用戶內線") return true;
+  if (
+    (name === "innerLineNumber" || name === "contractType" || name === "contractCapacity") &&
+    formData.parallelMethod === "用戶內線"
+  ) {
+    return true;
+  }
+  if (name === "solarCategory" && INSTALLATION_CATEGORY_GROUPS[formData.energyCategory]) return true;
   return false;
+}
+
+function isFieldVisible(name, formData) {
+  if (
+    (name === "innerLineNumber" || name === "contractType" || name === "contractCapacity") &&
+    formData.parallelMethod !== "用戶內線"
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function buildSectionSnapshot(formData) {
@@ -398,6 +480,7 @@ function buildSectionSnapshot(formData) {
 
 function countFilledFields(formData, fields) {
   return fields.reduce((total, [name]) => {
+    if (!isFieldVisible(name, formData)) return total;
     return normalize(formData[name]) ? total + 1 : total;
   }, 0);
 }
@@ -408,15 +491,32 @@ function fieldState(name, value, formData) {
 }
 
 function renderField(name, label, type, form, updateField, variant = "core") {
+  if (!isFieldVisible(name, form)) return null;
+
   const placeholder = FIELD_HINTS[name];
   const hint = FIELD_HINTS[name];
   const ariaLabel = FIELD_ARIA_LABELS[name] ?? label;
   const badgeLabel = variant === "detail" ? "補充" : "主要";
   const state = fieldState(name, form[name], form);
   const isRequired = isFieldRequired(name, form);
+  const installationOptions = INSTALLATION_CATEGORY_GROUPS[form.energyCategory] ?? [];
+  const optionMap = {
+    deviceType: DEVICE_TYPE_OPTIONS,
+    energyCategory: ENERGY_CATEGORY_OPTIONS,
+    installationCategory: installationOptions,
+    parallelMethod: ["台電外線", "用戶內線"],
+    saleMode: [
+      "僅併聯不躉售",
+      "全額躉售",
+      "自發自用(餘電躉售)",
+      "直供餘電躉售(限第一型)",
+      "轉供餘電躉售",
+      "轉供自用(第二、三型)"
+    ]
+  };
 
   return (
-    <label className={`field ${type === "textarea" ? "field-wide" : ""} is-${state}`} key={name}>
+    <label className={`field ${type === "textarea" || type === "otherNotes" ? "field-wide" : ""} is-${state}`} key={name}>
       <div className="field-rail">
         <div className={`field-state ${state}`} aria-hidden="true" />
       </div>
@@ -434,26 +534,77 @@ function renderField(name, label, type, form, updateField, variant = "core") {
           </div>
         </div>
         {hint ? <p className="field-note">{hint}</p> : null}
-        {type === "solarCategory" || type === "parallelMethod" || type === "saleMode" ? (
+        {type === "otherNotes" ? (
+          <div className="other-notes-stack">
+            <div className="advanced-option">
+              <div className="hint">配電級再生能源 台電公司於核發審查意見書後即進行細部協商。(註12)</div>
+              <div className="choice-row">
+                <div className="choice-group is-binary" role="radiogroup" aria-label="細部協商">
+                  {ADVANCED_OPTION_CHOICES.map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      className={`choice-pill ${form.detailReview === option ? "is-active" : ""}`}
+                      onClick={() => updateField("detailReview", option)}
+                    >
+                      <span className="choice-mark" aria-hidden="true">
+                        {form.detailReview === option ? "■" : "□"}
+                      </span>
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  aria-label="細部協商勾選日期"
+                  type="date"
+                  value={form.detailReviewDate}
+                  onChange={(event) => updateField("detailReviewDate", event.target.value)}
+                />
+              </div>
+            </div>
+            <div className="advanced-option">
+              <div className="hint">配電級再生能源 台電公司於核發審查意見書後即進行外線設計。(註13)</div>
+              <div className="choice-row">
+                <div className="choice-group is-binary" role="radiogroup" aria-label="外線設計">
+                  {ADVANCED_OPTION_CHOICES.map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      className={`choice-pill ${form.externalDesign === option ? "is-active" : ""}`}
+                      onClick={() => updateField("externalDesign", option)}
+                    >
+                      <span className="choice-mark" aria-hidden="true">
+                        {form.externalDesign === option ? "■" : "□"}
+                      </span>
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  aria-label="外線設計勾選日期"
+                  type="date"
+                  value={form.externalDesignDate}
+                  onChange={(event) => updateField("externalDesignDate", event.target.value)}
+                />
+              </div>
+            </div>
+            <textarea
+              aria-label={ariaLabel}
+              rows={5}
+              placeholder={placeholder}
+              value={form[name]}
+              onChange={(event) => updateField(name, event.target.value)}
+            />
+          </div>
+        ) : type === "installationCategory" && installationOptions.length === 0 ? (
+          <div className="hint">此能源類別免勾選設置分類。</div>
+        ) : optionMap[type] ? (
           <div
             className={`choice-group${type === "saleMode" ? " is-sale-mode" : ""}${type === "parallelMethod" ? " is-binary" : ""}`}
             role="radiogroup"
             aria-label={label}
           >
-            {(
-              type === "solarCategory"
-                ? ["屋頂", "地面", "水面"]
-                : type === "parallelMethod"
-                  ? ["台電外線", "用戶內線"]
-                  : [
-                      "僅併聯不躉售",
-                      "全額躉售",
-                      "自發自用(餘電躉售)",
-                      "直供餘電躉售(限第一型)",
-                      "轉供餘電躉售",
-                      "轉供自用(第二、三型)"
-                    ]
-            ).map((option) => (
+            {optionMap[type].map((option) => (
               <button
                 type="button"
                 key={option}
@@ -506,10 +657,12 @@ export default function Page() {
 
   const validation = validateCaseForm(form);
   const issues = summarizeIssues(validation);
-  const totalFields = sections.reduce(
-    (sum, section) => sum + section.fields.length + (section.detailFields?.length ?? 0),
-    0
-  );
+  const totalFields = sections.reduce((sum, section) => {
+    const visibleFields = [...section.fields, ...(section.detailFields ?? [])].filter(([name]) =>
+      isFieldVisible(name, form)
+    );
+    return sum + visibleFields.length;
+  }, 0);
   const filledFields = sections.reduce(
     (sum, section) =>
       sum + countFilledFields(form, [...section.fields, ...(section.detailFields ?? [])]),
@@ -520,13 +673,25 @@ export default function Page() {
   const missingRequired = sections
     .flatMap((section) => [...section.fields, ...(section.detailFields ?? [])].map(([name]) => name))
     .filter((name, index, names) => names.indexOf(name) === index)
+    .filter((name) => isFieldVisible(name, form))
     .filter((name) => isFieldRequired(name, form) && !normalize(form[name]));
   const topMissing = missingRequired
     .slice(0, 5)
     .map((name) => sections.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
 
   function updateField(name, value) {
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((current) => {
+      if (name === "energyCategory") {
+        const nextOptions = INSTALLATION_CATEGORY_GROUPS[value] ?? [];
+        return {
+          ...current,
+          energyCategory: value,
+          solarCategory: nextOptions.includes(current.solarCategory) ? current.solarCategory : (nextOptions[0] ?? "")
+        };
+      }
+
+      return { ...current, [name]: value };
+    });
   }
 
   function applyCompanyDefaults() {

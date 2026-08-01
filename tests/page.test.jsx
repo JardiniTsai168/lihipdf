@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import Page from "../app/page";
@@ -28,5 +28,17 @@ describe("single-form MVP page", () => {
     expect(screen.getByRole("heading", { name: "先填主要欄位，再匯出官方 Word" })).toBeInTheDocument();
     expect(screen.getAllByText("吳威霖").length).toBeGreaterThan(0);
     expect(screen.getAllByText("高雄市鼓山區明德路31號").length).toBeGreaterThan(0);
+  });
+
+  it("reveals inner-line fields and switches installation categories by energy type", () => {
+    render(<Page />);
+
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "預計併聯方式" })).getAllByRole("button")[1]);
+    expect(screen.getByPlaceholderText("併聯用戶內線時填寫")).toBeInTheDocument();
+    expect(screen.getByLabelText("契約容量_瓩")).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "再生能源類別" })).getAllByRole("button")[3]);
+    expect(within(screen.getByRole("radiogroup", { name: "設置分類" })).getAllByRole("button")[0]).toHaveTextContent("陸域");
+    expect(within(screen.getByRole("radiogroup", { name: "設置分類" })).getAllByRole("button")[1]).toHaveTextContent("離岸");
   });
 });

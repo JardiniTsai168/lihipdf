@@ -1,6 +1,26 @@
 import { z } from "zod";
 
 export const DEFAULT_OTHER_NOTES = "";
+export const DEVICE_TYPE_OPTIONS = ["第一型", "第二型", "第三型"];
+export const ENERGY_CATEGORY_OPTIONS = [
+  "太陽光電",
+  "小水力",
+  "生質能",
+  "風力",
+  "地熱能",
+  "廢棄物",
+  "氫能",
+  "燃料電池",
+  "海洋能"
+];
+export const INSTALLATION_CATEGORY_GROUPS = {
+  太陽光電: ["屋頂", "地面", "水面"],
+  風力: ["陸域", "離岸"],
+  生質能: ["無", "有厭氧消化設備", "農林植物"],
+  廢棄物: ["一般", "農業"]
+};
+export const INSTALLATION_CATEGORY_OPTIONS = Object.values(INSTALLATION_CATEGORY_GROUPS).flat();
+export const ADVANCED_OPTION_CHOICES = ["需", "不需"];
 
 export const CASE_FORM_DEFAULTS = {
   documentTitle: "再生能源發電設備併聯審查申請表",
@@ -22,6 +42,8 @@ export const CASE_FORM_DEFAULTS = {
   contactPerson: "",
   contactPhone: "",
   contactAddress: "",
+  deviceType: "第三型",
+  energyCategory: "太陽光電",
   solarCategory: "屋頂",
   installedExisting: "",
   installedNew: "",
@@ -38,6 +60,10 @@ export const CASE_FORM_DEFAULTS = {
   parallelPointVoltage: "單 相 3 線 110/220 伏",
   estimatedParallelDate: "",
   relatedCaseNumber: "",
+  detailReview: "不需",
+  detailReviewDate: "",
+  externalDesign: "不需",
+  externalDesignDate: "",
   otherNotes: ""
 };
 
@@ -59,6 +85,8 @@ const REQUIRED_MESSAGES = {
   saleNew: "請填寫躉售容量_新增設_瓩",
   saleTotal: "請填寫躉售容量_合計_瓩",
   innerLineNumber: "併聯用戶內線時請填寫電號",
+  contractType: "併聯用戶內線時請填寫契約種別",
+  contractCapacity: "併聯用戶內線時請填寫契約容量",
   boundaryVoltage: "請填寫責任分界點電壓",
   parallelPointVoltage: "請填寫併聯點電壓",
   estimatedParallelDate: "請填寫預計併聯日期"
@@ -84,7 +112,9 @@ const caseFormSchema = z.object({
   contactPerson: z.string().trim().min(1, REQUIRED_MESSAGES.contactPerson),
   contactPhone: z.string().trim().min(1, REQUIRED_MESSAGES.contactPhone),
   contactAddress: z.string().trim().min(1, REQUIRED_MESSAGES.contactAddress),
-  solarCategory: z.enum(["屋頂", "地面", "水面"]),
+  deviceType: z.enum(DEVICE_TYPE_OPTIONS),
+  energyCategory: z.enum(ENERGY_CATEGORY_OPTIONS),
+  solarCategory: z.union([z.enum(INSTALLATION_CATEGORY_OPTIONS), z.literal("")]),
   installedExisting: optionalNumericString,
   installedNew: numericString,
   installedTotal: numericString,
@@ -107,6 +137,10 @@ const caseFormSchema = z.object({
   parallelPointVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.parallelPointVoltage),
   estimatedParallelDate: z.string().trim().min(1, REQUIRED_MESSAGES.estimatedParallelDate),
   relatedCaseNumber: z.string(),
+  detailReview: z.enum(ADVANCED_OPTION_CHOICES),
+  detailReviewDate: z.string(),
+  externalDesign: z.enum(ADVANCED_OPTION_CHOICES),
+  externalDesignDate: z.string(),
   otherNotes: z.string()
 }).superRefine((data, ctx) => {
   if (data.saleMode !== "僅併聯不躉售") {
@@ -132,6 +166,39 @@ const caseFormSchema = z.object({
       path: ["innerLineNumber"],
       message: REQUIRED_MESSAGES.innerLineNumber
     });
+  }
+
+  if (data.parallelMethod === "用戶內線" && !data.contractType.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["contractType"],
+      message: REQUIRED_MESSAGES.contractType
+    });
+  }
+
+  if (data.parallelMethod === "用戶內線" && !data.contractCapacity.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["contractCapacity"],
+      message: REQUIRED_MESSAGES.contractCapacity
+    });
+  }
+
+  const validInstallationCategories = INSTALLATION_CATEGORY_GROUPS[data.energyCategory];
+  if (validInstallationCategories) {
+    if (!data.solarCategory) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["solarCategory"],
+        message: "請選擇設置分類"
+      });
+    } else if (!validInstallationCategories.includes(data.solarCategory)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["solarCategory"],
+        message: "設置分類與再生能源類別不符"
+      });
+    }
   }
 });
 
