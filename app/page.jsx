@@ -10,52 +10,59 @@ const STORAGE_KEY = "lihipdf_single_form_v1";
 
 const sections = [
   {
-    title: "基本資料",
-    description: "先收案件身分、窗口與場址資訊。",
+    title: "案件與設置者資料",
+    description: "主流程先照你指定的順序走，先把案件代號、設置者與場址資訊排直。",
     fields: [
-      ["applicationDate", "申請日期", "date"],
+      ["caseNumber", "編號", "text"],
+      ["districtOffice", "區處", "text"],
       ["ownerName", "設置者名稱", "text"],
       ["principalName", "負責人", "text"],
-      ["ownerPhone", "連絡電話", "tel"],
+      ["electricNumber", "電號", "text"],
       ["ownerAddress", "通訊處", "text"],
-      ["siteAddress", "設置場所或地點", "text"],
-      ["contactPerson", "連絡人", "text"],
-      ["contactPhone", "連絡人電話", "tel"],
-      ["contactAddress", "連絡人通訊處", "text"]
+      ["ownerPhone", "連絡電話", "tel"],
+      ["siteAddress", "設置場所或地點（註3）", "text"]
     ]
   },
   {
-    title: "設備型別與能源類別",
-    description: "把 Word 上那塊設備型別 / 類別表格完整保留，只是先鎖定在太陽光電第三型。",
-    note: "其他能源類別先保留原始表格語意，但這版仍以太陽光電案件為主。",
+    title: "聯絡窗口",
+    description: "聯絡人維持 Word 的三連欄順序，不再插其他欄位進來。",
+    fields: [
+      ["contactPerson", "連絡人", "text"],
+      ["contactAddress", "通訊處", "text"],
+      ["contactPhone", "連絡電話", "tel"]
+    ]
+  },
+  {
+    title: "設備與容量",
+    description: "設備型別、能源類別與容量欄位接著排，主欄位名稱改回比較接近 Word 的寫法。",
+    note: "設備型別與能源類別目前仍固定為太陽光電第三型，容量的既設欄位保留在補充欄位。",
     staticItems: [
       ["再生能源發電設備型別", "□第一型  □第二型  ■第三型"],
       ["再生能源類別", "■太陽光電  □小水力  □生質能  □風力  □地熱能  □廢棄物  □氫能  □燃料電池  □海洋能"]
     ],
     fields: [
-      ["solarCategory", "設置分類", "solarCategory"]
-    ]
-  },
-  {
-    title: "容量資料",
-    description: "容量欄位照台電表單分開放，避免新增設和合計填錯位置。",
-    fields: [
-      ["installedNew", "裝置容量_新增設_瓩", "number"],
-      ["installedTotal", "裝置容量_合計_瓩", "number"],
-      ["saleNew", "躉售容量_新增設_瓩", "number"],
-      ["saleTotal", "躉售容量_合計_瓩", "number"],
+      ["solarCategory", "設置分類", "solarCategory"],
+      ["installedNew", "裝置容量新（增）設", "number"],
+      ["installedTotal", "裝置容量合計", "number"],
+      ["saleNew", "躉售容量新（增）設", "number"],
+      ["saleTotal", "躉售容量合計", "number"]
     ],
     detailFields: [
-      ["installedExisting", "裝置容量_既設_瓩", "number"],
-      ["saleExisting", "躉售容量_既設_瓩", "number"]
+      ["installedExisting", "裝置容量既設", "number"],
+      ["saleExisting", "躉售容量既設", "number"]
     ]
   },
   {
     title: "併聯與售電方式",
-    description: "把 Word 那組併聯方式 / 售電方式選項拆成真正可點的表格欄位。",
+    description: "最後接併聯、售電、電壓、日期與補充說明，主流程就照你剛列的那串。",
     fields: [
       ["parallelMethod", "預計併聯方式", "parallelMethod"],
-      ["saleMode", "售電方式", "saleMode"]
+      ["saleMode", "售電方式", "saleMode"],
+      ["boundaryVoltage", "責任分界點電壓", "text"],
+      ["parallelPointVoltage", "併聯點電壓", "text"],
+      ["estimatedParallelDate", "預計併聯日期", "date"],
+      ["relatedCaseNumber", "與本案相關案件編號", "text"],
+      ["otherNotes", "其他事項", "textarea"]
     ],
     detailFields: [
       ["innerLineNumber", "併聯用戶內線電號", "text"],
@@ -64,40 +71,21 @@ const sections = [
     ]
   },
   {
-    title: "電壓與時程",
-    description: "這三格是最常回頭修改的欄位，集中放在一起比較好找。",
-    fields: [
-      ["boundaryVoltage", "責任分界點電壓", "text"],
-      ["parallelPointVoltage", "併聯點電壓", "text"],
-      ["estimatedParallelDate", "預計併聯日期", "date"]
-    ]
-  },
-  {
-    title: "案件識別資料",
-    description: "把 Word 上有、但不屬於主流程的案件識別欄位獨立放一區。",
-    fields: [
-      ["caseNumber", "編號", "text"],
-      ["districtOffice", "區處", "text"],
-      ["electricNumber", "電號", "text"],
-      ["relatedCaseNumber", "相關案件編號", "text"]
-    ]
-  },
-  {
-    title: "其他事項",
-    description: "保留自由補充說明，不再混進我自己加出來的申請選項。",
-    fields: [
-      ["otherNotes", "其他事項", "textarea"]
-    ]
-  },
-  {
     title: "公司預設資料",
-    description: "先填常用資料，案件聯絡資訊可直接沿用。",
+    description: "這區不進主流程，只留給快速套用聯絡資訊。",
     fields: [
       ["companyName", "公司名稱", "text"],
       ["companyContactPerson", "公司聯絡人", "text"],
       ["companyPhone", "公司電話", "tel"],
       ["companyAddress", "公司地址", "text"],
       ["companyTaxId", "公司統編", "text"]
+    ]
+  },
+  {
+    title: "文件資訊",
+    description: "申請日期保留獨立放最後，匯出前再補最順手。",
+    fields: [
+      ["applicationDate", "申請日期", "date"]
     ]
   }
 ];
@@ -134,6 +122,16 @@ const FIELD_HINTS = {
   companyAddress: "例：高雄市前鎮區成功路88號",
   companyTaxId: "例：12345678",
   otherNotes: "若有補充說明再填"
+};
+
+const FIELD_ARIA_LABELS = {
+  siteAddress: "設置場所或地點",
+  contactAddress: "連絡人通訊處",
+  contactPhone: "連絡人電話",
+  installedNew: "裝置容量_新增設_瓩",
+  installedTotal: "裝置容量_合計_瓩",
+  saleNew: "躉售容量_新增設_瓩",
+  saleTotal: "躉售容量_合計_瓩"
 };
 
 function loadDraft() {
@@ -412,6 +410,7 @@ function fieldState(name, value, formData) {
 function renderField(name, label, type, form, updateField, variant = "core") {
   const placeholder = FIELD_HINTS[name];
   const hint = FIELD_HINTS[name];
+  const ariaLabel = FIELD_ARIA_LABELS[name] ?? label;
   const badgeLabel = variant === "detail" ? "補充" : "主要";
   const state = fieldState(name, form[name], form);
   const isRequired = isFieldRequired(name, form);
@@ -468,7 +467,7 @@ function renderField(name, label, type, form, updateField, variant = "core") {
           </div>
         ) : type === "textarea" ? (
           <textarea
-            aria-label={label}
+            aria-label={ariaLabel}
             rows={5}
             placeholder={placeholder}
             value={form[name]}
@@ -476,7 +475,7 @@ function renderField(name, label, type, form, updateField, variant = "core") {
           />
         ) : (
           <input
-            aria-label={label}
+            aria-label={ariaLabel}
             type={type}
             inputMode={type === "number" ? "decimal" : undefined}
             placeholder={placeholder}
@@ -668,7 +667,7 @@ export default function Page() {
           })}
             <section className="section final-check">
               <div className="section-index">
-                <span>08</span>
+                <span>{String(sections.length + 1).padStart(2, "0")}</span>
               </div>
               <div className="section-card is-tight">
                 <div className="section-header">
@@ -754,8 +753,8 @@ export default function Page() {
               <div className="sidebar-kicker">目前缺口</div>
               {topMissing.length > 0 ? (
                 <ul className="issue-list">
-                  {topMissing.map((label) => (
-                    <li key={label}>{label}</li>
+                  {topMissing.map((label, index) => (
+                    <li key={`${label}-${index}`}>{label}</li>
                   ))}
                 </ul>
               ) : (
