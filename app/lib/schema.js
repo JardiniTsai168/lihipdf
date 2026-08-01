@@ -30,14 +30,20 @@ export const CASE_FORM_DEFAULTS = {
   saleExisting: "",
   saleNew: "",
   saleTotal: "",
+  parallelMethod: "台電外線",
   innerLineNumber: "",
   contractType: "",
   contractCapacity: "",
+  saleMode: "全額躉售",
   boundaryVoltage: "單 相 3 線 110/220 伏",
   parallelPointVoltage: "單 相 3 線 110/220 伏",
   estimatedParallelDate: "",
   relatedCaseNumber: "",
-  otherNotes: DEFAULT_OTHER_NOTES
+  detailNegotiation: "需",
+  detailNegotiationDate: "",
+  externalLineDesign: "需",
+  externalLineDesignDate: "",
+  otherNotes: ""
 };
 
 const numericString = z
@@ -55,6 +61,9 @@ const REQUIRED_MESSAGES = {
   contactPerson: "請填寫連絡人",
   contactPhone: "請填寫連絡人電話",
   contactAddress: "請填寫連絡人通訊處",
+  saleNew: "請填寫躉售容量_新增設_瓩",
+  saleTotal: "請填寫躉售容量_合計_瓩",
+  innerLineNumber: "併聯用戶內線時請填寫電號",
   boundaryVoltage: "請填寫責任分界點電壓",
   parallelPointVoltage: "請填寫併聯點電壓",
   estimatedParallelDate: "請填寫預計併聯日期"
@@ -85,16 +94,54 @@ const caseFormSchema = z.object({
   installedNew: numericString,
   installedTotal: numericString,
   saleExisting: optionalNumericString,
-  saleNew: numericString,
-  saleTotal: numericString,
+  saleNew: optionalNumericString,
+  saleTotal: optionalNumericString,
+  parallelMethod: z.enum(["台電外線", "用戶內線"]),
   innerLineNumber: z.string(),
   contractType: z.string(),
   contractCapacity: z.string(),
+  saleMode: z.enum([
+    "僅併聯不躉售",
+    "全額躉售",
+    "自發自用(餘電躉售)",
+    "直供餘電躉售(限第一型)",
+    "轉供餘電躉售",
+    "轉供自用(第二、三型)"
+  ]),
   boundaryVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.boundaryVoltage),
   parallelPointVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.parallelPointVoltage),
   estimatedParallelDate: z.string().trim().min(1, REQUIRED_MESSAGES.estimatedParallelDate),
   relatedCaseNumber: z.string(),
+  detailNegotiation: z.enum(["需", "不需"]),
+  detailNegotiationDate: z.string(),
+  externalLineDesign: z.enum(["需", "不需"]),
+  externalLineDesignDate: z.string(),
   otherNotes: z.string()
+}).superRefine((data, ctx) => {
+  if (data.saleMode !== "僅併聯不躉售") {
+    if (!data.saleNew.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["saleNew"],
+        message: REQUIRED_MESSAGES.saleNew
+      });
+    }
+    if (!data.saleTotal.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["saleTotal"],
+        message: REQUIRED_MESSAGES.saleTotal
+      });
+    }
+  }
+
+  if (data.parallelMethod === "用戶內線" && !data.innerLineNumber.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["innerLineNumber"],
+      message: REQUIRED_MESSAGES.innerLineNumber
+    });
+  }
 });
 
 export function validateCaseForm(input) {

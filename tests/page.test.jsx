@@ -10,6 +10,7 @@ describe("single-form MVP page", () => {
 
     expect(screen.getByRole("heading", { name: "把併聯審查表單，整理成真的看得懂的工作頁" })).toBeInTheDocument();
     expect(screen.getByLabelText("設置者名稱")).toBeInTheDocument();
+    expect(screen.getByLabelText("預計併聯方式")).toBeInTheDocument();
     expect(screen.getByLabelText("裝置容量_新增設_瓩")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "匯出官方 Word" })).toBeInTheDocument();
   });

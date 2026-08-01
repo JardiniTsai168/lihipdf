@@ -23,15 +23,21 @@ describe("document payload", () => {
       saleExisting: "3",
       saleNew: "9",
       saleTotal: "9",
+      parallelMethod: "用戶內線",
       innerLineNumber: "IL-12",
-      contractType: "低壓併聯",
-      contractCapacity: "49.5kW",
+      contractType: "低壓電力",
+      contractCapacity: "49.5",
+      saleMode: "轉供自用(第二、三型)",
       boundaryVoltage: "單 相 3 線 110/220 伏",
       parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31",
       applicationDate: "2026-07-30",
       relatedCaseNumber: "A-0007",
-      otherNotes: ""
+      detailNegotiation: "需",
+      detailNegotiationDate: "2026-07-15",
+      externalLineDesign: "不需",
+      externalLineDesignDate: "2026-07-20",
+      otherNotes: "補充備註"
     });
 
     expect(payload.ownerName).toBe("吳威霖");
@@ -40,10 +46,15 @@ describe("document payload", () => {
     expect(payload.electricNumber).toBe("12-34-5678-90-1");
     expect(payload.installedExisting).toBe("3");
     expect(payload.saleExisting).toBe("3");
-    expect(payload.contractType).toBe("低壓併聯");
+    expect(payload.parallelMethod).toBe("用戶內線");
+    expect(payload.contractType).toBe("低壓電力");
+    expect(payload.saleMode).toBe("轉供自用(第二、三型)");
     expect(payload.relatedCaseNumber).toBe("A-0007");
     expect(payload.solarCategoryLine).toContain("■屋頂");
     expect(payload.applicationDateRoc).toBe("115 年 7 月 30 日");
-    expect(payload.otherNotes).toContain("台電公司於核發審查意見書後即進行細部協商");
+    expect(payload.otherNotes).toContain("■需□不需");
+    expect(payload.otherNotes).toContain("□需■不需");
+    expect(payload.otherNotes).toContain("115 年 7 月 15 日");
+    expect(payload.otherNotes).toContain("補充備註");
   });
 });

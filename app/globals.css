@@ -506,6 +506,14 @@ select:focus {
   gap: 10px;
 }
 
+.choice-group.is-binary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-group.is-sale-mode {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .choice-pill {
   display: inline-flex;
   justify-content: center;
@@ -760,6 +768,11 @@ select:focus {
   }
 
   .choice-group {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-group.is-binary,
+  .choice-group.is-sale-mode {
     grid-template-columns: 1fr;
   }
 }

@@ -26,11 +26,11 @@ const sections = [
   },
   {
     title: "設備型別與能源類別",
-    description: "固定條件直接鎖住，只留下太陽光電的必要選項。",
-    note: "這版先專心處理太陽光電，其他能源與特殊分支先不混進來。",
+    description: "把 Word 上那塊設備型別 / 類別表格完整保留，只是先鎖定在太陽光電第三型。",
+    note: "其他能源類別先保留原始表格語意，但這版仍以太陽光電案件為主。",
     staticItems: [
-      ["再生能源發電設備型別", "第三型"],
-      ["再生能源類別", "太陽光電"]
+      ["再生能源發電設備型別", "□第一型  □第二型  ■第三型"],
+      ["再生能源類別", "■太陽光電  □小水力  □生質能  □風力  □地熱能  □廢棄物  □氫能  □燃料電池  □海洋能"]
     ],
     fields: [
       ["solarCategory", "設置分類", "solarCategory"]
@@ -52,11 +52,15 @@ const sections = [
   },
   {
     title: "併聯與售電方式",
-    description: "先決定併聯路徑和售電模式，後面匯出的文件才不會走錯分支。",
+    description: "把 Word 那組併聯方式 / 售電方式選項拆成真正可點的表格欄位。",
     fields: [
-      ["contractType", "預計併聯方式 / 契約別", "text"],
-      ["contractCapacity", "售電方式 / 契約容量", "text"],
-      ["innerLineNumber", "內線號碼", "text"]
+      ["parallelMethod", "預計併聯方式", "parallelMethod"],
+      ["saleMode", "售電方式", "saleMode"]
+    ],
+    detailFields: [
+      ["innerLineNumber", "併聯用戶內線電號", "text"],
+      ["contractType", "契約種別", "text"],
+      ["contractCapacity", "契約容量_瓩", "text"]
     ]
   },
   {
@@ -70,8 +74,12 @@ const sections = [
   },
   {
     title: "案件補充與申請選項",
-    description: "有特殊說明再填，留白也沒問題。Word 匯出時仍會自動補預設句型。",
+    description: "把 Word 下半部原本藏在其他事項裡的申請選項拆開，額外備註再另外填。",
     fields: [
+      ["detailNegotiation", "先行細部協商", "requestToggle"],
+      ["detailNegotiationDate", "細部協商勾選日期", "date"],
+      ["externalLineDesign", "先行外線設計", "requestToggle"],
+      ["externalLineDesignDate", "外線設計勾選日期", "date"],
       ["otherNotes", "其他事項", "textarea"]
     ],
     detailFields: [
@@ -113,17 +121,23 @@ const FIELD_HINTS = {
   saleExisting: "沒有可留白",
   saleNew: "例：9",
   saleTotal: "例：9",
-  innerLineNumber: "若走內線再填",
-  contractType: "例：併聯台電外線 / 低壓併聯",
-  contractCapacity: "例：全額躉售 / 49.5kW",
+  parallelMethod: "選擇併聯台電外線或併聯用戶內線",
+  saleMode: "依申請案型選一種售電方式",
+  innerLineNumber: "若走用戶內線再填",
+  contractType: "例：低壓電力",
+  contractCapacity: "例：49.5",
   estimatedParallelDate: "例：2026-12-31",
   relatedCaseNumber: "若有前案再填",
+  detailNegotiation: "是否需台電先行細部協商",
+  detailNegotiationDate: "例：2026-08-01",
+  externalLineDesign: "是否需台電先行外線設計",
+  externalLineDesignDate: "例：2026-08-15",
   companyName: "例：某某能源股份有限公司",
   companyContactPerson: "例：鄒侑廷",
   companyPhone: "例：0939-255-192",
   companyAddress: "例：高雄市前鎮區成功路88號",
   companyTaxId: "例：12345678",
-  otherNotes: "留白也可以，匯出時會保留預設句型"
+  otherNotes: "若有補充說明再填，結構化申請選項會自動帶進 Word"
 };
 
 function loadDraft() {
@@ -163,9 +177,33 @@ function solarCategoryLine(value) {
     .join("  ");
 }
 
-function buildDocumentPayload(formData) {
-  const normalizedOtherNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+function checkboxLine(selected, value, label) {
+  return `${selected === value ? "■" : "□"}${label}`;
+}
 
+function requestPair(selected) {
+  return `${checkboxLine(selected, "需", "需")}${checkboxLine(selected, "不需", "不需")}`;
+}
+
+function buildStructuredNotes(formData) {
+  const notes = [];
+  const extraNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+
+  notes.push(
+    `配電級再生能源${requestPair(formData.detailNegotiation)} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${rocDateString(formData.detailNegotiationDate)}`
+  );
+  notes.push(
+    `配電級再生能源${requestPair(formData.externalLineDesign)} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${rocDateString(formData.externalLineDesignDate)}`
+  );
+
+  if (extraNotes) {
+    notes.push(extraNotes);
+  }
+
+  return notes.join("\n");
+}
+
+function buildDocumentPayload(formData) {
   return {
     caseNumber: normalize(formData.caseNumber),
     districtOffice: normalize(formData.districtOffice),
@@ -185,14 +223,16 @@ function buildDocumentPayload(formData) {
     saleExisting: normalize(formData.saleExisting),
     saleNew: normalize(formData.saleNew),
     saleTotal: normalize(formData.saleTotal),
+    parallelMethod: formData.parallelMethod,
     innerLineNumber: normalize(formData.innerLineNumber),
     contractType: normalize(formData.contractType),
     contractCapacity: normalize(formData.contractCapacity),
+    saleMode: formData.saleMode,
     boundaryVoltage: normalize(formData.boundaryVoltage),
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: normalizedOtherNotes,
+    otherNotes: buildStructuredNotes(formData),
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }
@@ -272,6 +312,52 @@ function applyTemplateLayoutFixes(documentXml) {
   );
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyTemplateSelectionState(documentXml, payload) {
+  const replacements = [
+    [
+      /[■□]併聯台電外線/g,
+      checkboxLine(payload.parallelMethod, "台電外線", "併聯台電外線")
+    ],
+    [
+      new RegExp(`[■□]併聯用戶內線，電號：${escapeRegex(payload.innerLineNumber)}`, "g"),
+      checkboxLine(payload.parallelMethod, "用戶內線", `併聯用戶內線，電號：${payload.innerLineNumber}`)
+    ],
+    [
+      /[■□]僅併聯不躉售/g,
+      checkboxLine(payload.saleMode, "僅併聯不躉售", "僅併聯不躉售")
+    ],
+    [
+      /[■□]全額躉售/g,
+      checkboxLine(payload.saleMode, "全額躉售", "全額躉售")
+    ],
+    [
+      /[■□]自發自用\(餘電躉售\)/g,
+      checkboxLine(payload.saleMode, "自發自用(餘電躉售)", "自發自用(餘電躉售)")
+    ],
+    [
+      /[■□]直供餘電躉售\(限第一型\)/g,
+      checkboxLine(payload.saleMode, "直供餘電躉售(限第一型)", "直供餘電躉售(限第一型)")
+    ],
+    [
+      /[■□]轉供餘電躉售/g,
+      checkboxLine(payload.saleMode, "轉供餘電躉售", "轉供餘電躉售")
+    ],
+    [
+      /[■□]轉供自用\(第二、三型\)/g,
+      checkboxLine(payload.saleMode, "轉供自用(第二、三型)", "轉供自用(第二、三型)")
+    ]
+  ];
+
+  return replacements.reduce(
+    (xml, [pattern, replacement]) => xml.replace(pattern, replacement),
+    documentXml
+  );
+}
+
 async function renderDocxBuffer(formData) {
   const baseUrl = window.location.href.endsWith("/") ? window.location.href : `${window.location.href}/`;
   const templateUrl = new URL("./official-template-fillable.docx", baseUrl);
@@ -286,6 +372,8 @@ async function renderDocxBuffer(formData) {
     documentXml = documentXml.replaceAll(`{{${key}}}`, xmlValue(value));
   }
 
+  documentXml = applyTemplateSelectionState(documentXml, payload);
+
   zip.file("word/document.xml", documentXml);
   return zip.generate({ type: "uint8array" });
 }
@@ -299,7 +387,7 @@ function PreviewItem({ label, value }) {
   );
 }
 
-const REQUIRED_FIELDS = new Set([
+const BASE_REQUIRED_FIELDS = new Set([
   "ownerName",
   "ownerPhone",
   "ownerAddress",
@@ -309,12 +397,17 @@ const REQUIRED_FIELDS = new Set([
   "contactAddress",
   "installedNew",
   "installedTotal",
-  "saleNew",
-  "saleTotal",
   "boundaryVoltage",
   "parallelPointVoltage",
   "estimatedParallelDate"
 ]);
+
+function isFieldRequired(name, formData) {
+  if (BASE_REQUIRED_FIELDS.has(name)) return true;
+  if ((name === "saleNew" || name === "saleTotal") && formData.saleMode !== "僅併聯不躉售") return true;
+  if (name === "innerLineNumber" && formData.parallelMethod === "用戶內線") return true;
+  return false;
+}
 
 function buildSectionSnapshot(formData) {
   return [
@@ -341,8 +434,8 @@ function countFilledFields(formData, fields) {
   }, 0);
 }
 
-function fieldState(name, value) {
-  if (!REQUIRED_FIELDS.has(name)) return normalize(value) ? "filled" : "optional";
+function fieldState(name, value, formData) {
+  if (!isFieldRequired(name, formData)) return normalize(value) ? "filled" : "optional";
   return normalize(value) ? "filled" : "missing";
 }
 
@@ -350,8 +443,8 @@ function renderField(name, label, type, form, updateField, variant = "core") {
   const placeholder = FIELD_HINTS[name];
   const hint = FIELD_HINTS[name];
   const badgeLabel = variant === "detail" ? "補充" : "主要";
-  const state = fieldState(name, form[name]);
-  const isRequired = REQUIRED_FIELDS.has(name);
+  const state = fieldState(name, form[name], form);
+  const isRequired = isFieldRequired(name, form);
 
   return (
     <label className={`field ${type === "textarea" ? "field-wide" : ""} is-${state}`} key={name}>
@@ -372,9 +465,26 @@ function renderField(name, label, type, form, updateField, variant = "core") {
           </div>
         </div>
         {hint ? <p className="field-note">{hint}</p> : null}
-        {type === "solarCategory" ? (
-          <div className="choice-group" role="radiogroup" aria-label={label}>
-            {["屋頂", "地面", "水面"].map((option) => (
+        {type === "solarCategory" || type === "parallelMethod" || type === "saleMode" || type === "requestToggle" ? (
+          <div
+            className={`choice-group${type === "saleMode" ? " is-sale-mode" : ""}${type === "parallelMethod" || type === "requestToggle" ? " is-binary" : ""}`}
+            role="radiogroup"
+            aria-label={label}
+          >
+            {(type === "solarCategory"
+              ? ["屋頂", "地面", "水面"]
+              : type === "parallelMethod"
+                ? ["台電外線", "用戶內線"]
+                : type === "saleMode"
+                  ? [
+                      "僅併聯不躉售",
+                      "全額躉售",
+                      "自發自用(餘電躉售)",
+                      "直供餘電躉售(限第一型)",
+                      "轉供餘電躉售",
+                      "轉供自用(第二、三型)"
+                    ]
+                  : ["需", "不需"]).map((option) => (
               <button
                 type="button"
                 key={option}
@@ -438,7 +548,10 @@ export default function Page() {
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
   const sectionSnapshot = buildSectionSnapshot(form);
-  const missingRequired = [...REQUIRED_FIELDS].filter((name) => !normalize(form[name]));
+  const missingRequired = sections
+    .flatMap((section) => [...section.fields, ...(section.detailFields ?? [])].map(([name]) => name))
+    .filter((name, index, names) => names.indexOf(name) === index)
+    .filter((name) => isFieldRequired(name, form) && !normalize(form[name]));
   const topMissing = missingRequired
     .slice(0, 5)
     .map((name) => sections.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);

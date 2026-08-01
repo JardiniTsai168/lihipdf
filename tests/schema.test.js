@@ -10,6 +10,8 @@ describe("case form schema", () => {
     expect(CASE_FORM_DEFAULTS.exportFormat).toBe("pdf");
     expect(CASE_FORM_DEFAULTS.caseNumber).toBe("");
     expect(CASE_FORM_DEFAULTS.installedExisting).toBe("");
+    expect(CASE_FORM_DEFAULTS.parallelMethod).toBe("台電外線");
+    expect(CASE_FORM_DEFAULTS.saleMode).toBe("全額躉售");
   });
 
   it("accepts a valid single-form payload", () => {
@@ -31,9 +33,13 @@ describe("case form schema", () => {
       saleExisting: "",
       saleNew: "9",
       saleTotal: "9",
+      parallelMethod: "用戶內線",
       innerLineNumber: "IL-12",
-      contractType: "低壓併聯",
-      contractCapacity: "49.5kW",
+      contractType: "低壓電力",
+      contractCapacity: "49.5",
+      saleMode: "全額躉售",
+      detailNegotiation: "需",
+      externalLineDesign: "不需",
       estimatedParallelDate: "2026-12-31"
     });
 
@@ -51,5 +57,27 @@ describe("case form schema", () => {
         siteAddress: ""
       })
     ).toThrow(/請填寫設置者名稱|請填寫連絡電話|請填寫設置場所或地點/);
+  });
+
+  it("allows blank躉售容量 when sale mode is 僅併聯不躉售", () => {
+    const result = parseCaseForm({
+      ...CASE_FORM_DEFAULTS,
+      ownerName: "王小明",
+      ownerPhone: "0912345678",
+      ownerAddress: "高雄市鼓山區明德路31號",
+      siteAddress: "高雄市鼓山區明德路31號",
+      contactPerson: "黃昭華",
+      contactPhone: "07-7338588",
+      contactAddress: "高雄市鳥松區大同路2-58號",
+      installedNew: "9",
+      installedTotal: "9",
+      saleMode: "僅併聯不躉售",
+      saleNew: "",
+      saleTotal: "",
+      estimatedParallelDate: "2026-12-31"
+    });
+
+    expect(result.saleMode).toBe("僅併聯不躉售");
+    expect(result.saleNew).toBe("");
   });
 });

@@ -41,9 +41,34 @@ function solarCategoryLine(value) {
     .join("  ");
 }
 
+function checkboxLine(selected, value, label) {
+  return `${selected === value ? "■" : "□"}${label}`;
+}
+
+function requestPair(selected) {
+  return `${checkboxLine(selected, "需", "需")}${checkboxLine(selected, "不需", "不需")}`;
+}
+
+function buildStructuredNotes(formData) {
+  const notes = [];
+
+  notes.push(
+    `配電級再生能源${requestPair(formData.detailNegotiation)} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${rocDateString(formData.detailNegotiationDate)}`
+  );
+  notes.push(
+    `配電級再生能源${requestPair(formData.externalLineDesign)} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${rocDateString(formData.externalLineDesignDate)}`
+  );
+
+  const extraNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
+  if (extraNotes) {
+    notes.push(extraNotes);
+  }
+
+  return notes.join("\n");
+}
+
 export function buildDocumentPayload(data) {
   const formData = parseCaseForm(data);
-  const normalizedOtherNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
 
   return {
     caseNumber: normalize(formData.caseNumber),
@@ -64,14 +89,16 @@ export function buildDocumentPayload(data) {
     saleExisting: normalize(formData.saleExisting),
     saleNew: normalize(formData.saleNew),
     saleTotal: normalize(formData.saleTotal),
+    parallelMethod: formData.parallelMethod,
     innerLineNumber: normalize(formData.innerLineNumber),
     contractType: normalize(formData.contractType),
     contractCapacity: normalize(formData.contractCapacity),
+    saleMode: formData.saleMode,
     boundaryVoltage: normalize(formData.boundaryVoltage),
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: normalizedOtherNotes || DEFAULT_OTHER_NOTES,
+    otherNotes: buildStructuredNotes(formData) || DEFAULT_OTHER_NOTES,
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }
@@ -158,6 +185,52 @@ function applyTemplateLayoutFixes(documentXml) {
   );
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyTemplateSelectionState(documentXml, payload) {
+  const replacements = [
+    [
+      /[■□]併聯台電外線/g,
+      checkboxLine(payload.parallelMethod, "台電外線", "併聯台電外線")
+    ],
+    [
+      new RegExp(`[■□]併聯用戶內線，電號：${escapeRegex(payload.innerLineNumber)}`, "g"),
+      checkboxLine(payload.parallelMethod, "用戶內線", `併聯用戶內線，電號：${payload.innerLineNumber}`)
+    ],
+    [
+      /[■□]僅併聯不躉售/g,
+      checkboxLine(payload.saleMode, "僅併聯不躉售", "僅併聯不躉售")
+    ],
+    [
+      /[■□]全額躉售/g,
+      checkboxLine(payload.saleMode, "全額躉售", "全額躉售")
+    ],
+    [
+      /[■□]自發自用\(餘電躉售\)/g,
+      checkboxLine(payload.saleMode, "自發自用(餘電躉售)", "自發自用(餘電躉售)")
+    ],
+    [
+      /[■□]直供餘電躉售\(限第一型\)/g,
+      checkboxLine(payload.saleMode, "直供餘電躉售(限第一型)", "直供餘電躉售(限第一型)")
+    ],
+    [
+      /[■□]轉供餘電躉售/g,
+      checkboxLine(payload.saleMode, "轉供餘電躉售", "轉供餘電躉售")
+    ],
+    [
+      /[■□]轉供自用\(第二、三型\)/g,
+      checkboxLine(payload.saleMode, "轉供自用(第二、三型)", "轉供自用(第二、三型)")
+    ]
+  ];
+
+  return replacements.reduce(
+    (xml, [pattern, replacement]) => xml.replace(pattern, replacement),
+    documentXml
+  );
+}
+
 export async function renderOfficialDocx(formData) {
   const templateBytes = await getTemplateBytes();
   const zip = new PizZip(templateBytes);
@@ -169,6 +242,8 @@ export async function renderOfficialDocx(formData) {
   for (const [key, value] of Object.entries(payload)) {
     documentXml = documentXml.replaceAll(`{{${key}}}`, xmlValue(value));
   }
+
+  documentXml = applyTemplateSelectionState(documentXml, payload);
 
   zip.file("word/document.xml", documentXml);
   return zip.generate({ type: "nodebuffer" });
