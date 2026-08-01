@@ -291,12 +291,18 @@ function countFilledFields(formData, fields) {
   }, 0);
 }
 
-function renderField(name, label, type, form, updateField) {
+function renderField(name, label, type, form, updateField, variant = "core") {
   const placeholder = FIELD_HINTS[name];
+  const hint = FIELD_HINTS[name];
+  const badgeLabel = variant === "detail" ? "補充" : "主要";
 
   return (
     <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
-      <span>{label}</span>
+      <div className="field-head">
+        <span>{label}</span>
+        <em className={`field-badge ${variant}`}>{badgeLabel}</em>
+      </div>
+      {hint ? <p className="field-note">{hint}</p> : null}
       {type === "select" ? (
         <select
           aria-label={label}
@@ -419,6 +425,11 @@ export default function Page() {
         <p className="hero-text">
           先把第一份太陽能送審表單做順。照著 3 步填，最後下載已填好的官方 Word。
         </p>
+        <div className="hero-ribbon">
+          <span>先填主要欄位</span>
+          <span>補充欄位另外展開</span>
+          <span>右側隨時看摘要</span>
+        </div>
         <div className="hero-meta">
           <div className="progress-card">
             <span>完成度</span>
@@ -471,7 +482,7 @@ export default function Page() {
                 </div>
                 <div className="fields-grid">
                   {section.fields.map(([name, label, type]) =>
-                    renderField(name, label, type, form, updateField)
+                    renderField(name, label, type, form, updateField, "core")
                   )}
                 </div>
                 {detailFields.length > 0 ? (
@@ -483,7 +494,7 @@ export default function Page() {
                     <p className="detail-copy">這些欄位保留給進階案件，主流程先填上面那一區就行。</p>
                     <div className="fields-grid detail-grid">
                       {detailFields.map(([name, label, type]) =>
-                        renderField(name, label, type, form, updateField)
+                        renderField(name, label, type, form, updateField, "detail")
                       )}
                     </div>
                   </details>
