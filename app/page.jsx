@@ -10,19 +10,8 @@ const STORAGE_KEY = "lihipdf_single_form_v1";
 
 const sections = [
   {
-    title: "公司預設資料",
-    description: "先填常用資料，案件聯絡資訊可直接沿用。",
-    fields: [
-      ["companyName", "公司名稱", "text"],
-      ["companyContactPerson", "公司聯絡人", "text"],
-      ["companyPhone", "公司電話", "tel"],
-      ["companyAddress", "公司地址", "text"],
-      ["companyTaxId", "公司統編", "text"]
-    ]
-  },
-  {
-    title: "案件資料",
-    description: "直接開始做案件，不先卡設定。",
+    title: "基本資料",
+    description: "先收案件身分、窗口與場址資訊。",
     fields: [
       ["applicationDate", "申請日期", "date"],
       ["ownerName", "設置者名稱", "text"],
@@ -33,34 +22,74 @@ const sections = [
       ["contactPerson", "連絡人", "text"],
       ["contactPhone", "連絡人電話", "tel"],
       ["contactAddress", "連絡人通訊處", "text"]
-    ],
-    detailFields: [
-      ["caseNumber", "編號", "text"],
-      ["districtOffice", "區處", "text"],
-      ["electricNumber", "電號", "text"]
     ]
   },
   {
-    title: "容量與時程",
-    description: "只保留第一份表單真正要填進文件的核心欄位。",
+    title: "設備型別與能源類別",
+    description: "固定條件直接鎖住，只留下太陽光電的必要選項。",
+    note: "這版先專心處理太陽光電，其他能源與特殊分支先不混進來。",
+    staticItems: [
+      ["再生能源發電設備型別", "第三型"],
+      ["再生能源類別", "太陽光電"]
+    ],
     fields: [
-      ["solarCategory", "設置分類", "select"],
+      ["solarCategory", "設置分類", "solarCategory"]
+    ]
+  },
+  {
+    title: "容量資料",
+    description: "容量欄位照台電表單分開放，避免新增設和合計填錯位置。",
+    fields: [
       ["installedNew", "裝置容量_新增設_瓩", "number"],
       ["installedTotal", "裝置容量_合計_瓩", "number"],
       ["saleNew", "躉售容量_新增設_瓩", "number"],
       ["saleTotal", "躉售容量_合計_瓩", "number"],
-      ["boundaryVoltage", "責任分界點電壓", "text"],
-      ["parallelPointVoltage", "併聯點電壓", "text"],
-      ["estimatedParallelDate", "預計併聯日期", "date"],
-      ["otherNotes", "其他事項", "textarea"]
     ],
     detailFields: [
       ["installedExisting", "裝置容量_既設_瓩", "number"],
-      ["saleExisting", "躉售容量_既設_瓩", "number"],
-      ["innerLineNumber", "內線號碼", "text"],
-      ["contractType", "契約別 / 併聯方式", "text"],
-      ["contractCapacity", "契約容量", "text"],
+      ["saleExisting", "躉售容量_既設_瓩", "number"]
+    ]
+  },
+  {
+    title: "併聯與售電方式",
+    description: "先決定併聯路徑和售電模式，後面匯出的文件才不會走錯分支。",
+    fields: [
+      ["contractType", "預計併聯方式 / 契約別", "text"],
+      ["contractCapacity", "售電方式 / 契約容量", "text"],
+      ["innerLineNumber", "內線號碼", "text"]
+    ]
+  },
+  {
+    title: "電壓與時程",
+    description: "這三格是最常回頭修改的欄位，集中放在一起比較好找。",
+    fields: [
+      ["boundaryVoltage", "責任分界點電壓", "text"],
+      ["parallelPointVoltage", "併聯點電壓", "text"],
+      ["estimatedParallelDate", "預計併聯日期", "date"]
+    ]
+  },
+  {
+    title: "案件補充與申請選項",
+    description: "有特殊說明再填，留白也沒問題。Word 匯出時仍會自動補預設句型。",
+    fields: [
+      ["otherNotes", "其他事項", "textarea"]
+    ],
+    detailFields: [
+      ["caseNumber", "編號", "text"],
+      ["districtOffice", "區處", "text"],
+      ["electricNumber", "電號", "text"],
       ["relatedCaseNumber", "相關案件編號", "text"]
+    ]
+  },
+  {
+    title: "公司預設資料",
+    description: "先填常用資料，案件聯絡資訊可直接沿用。",
+    fields: [
+      ["companyName", "公司名稱", "text"],
+      ["companyContactPerson", "公司聯絡人", "text"],
+      ["companyPhone", "公司電話", "tel"],
+      ["companyAddress", "公司地址", "text"],
+      ["companyTaxId", "公司統編", "text"]
     ]
   }
 ];
@@ -84,11 +113,17 @@ const FIELD_HINTS = {
   saleExisting: "沒有可留白",
   saleNew: "例：9",
   saleTotal: "例：9",
-  innerLineNumber: "例：IL-12",
-  contractType: "例：低壓併聯",
-  contractCapacity: "例：49.5kW",
+  innerLineNumber: "若走內線再填",
+  contractType: "例：併聯台電外線 / 低壓併聯",
+  contractCapacity: "例：全額躉售 / 49.5kW",
   estimatedParallelDate: "例：2026-12-31",
-  relatedCaseNumber: "若有前案再填"
+  relatedCaseNumber: "若有前案再填",
+  companyName: "例：某某能源股份有限公司",
+  companyContactPerson: "例：鄒侑廷",
+  companyPhone: "例：0939-255-192",
+  companyAddress: "例：高雄市前鎮區成功路88號",
+  companyTaxId: "例：12345678",
+  otherNotes: "留白也可以，匯出時會保留預設句型"
 };
 
 function loadDraft() {
@@ -267,11 +302,7 @@ function PreviewItem({ label, value }) {
 function buildSectionSnapshot(formData) {
   return [
     {
-      title: "公司預設",
-      value: normalize(formData.companyName) || "先填公司資料"
-    },
-    {
-      title: "案件主體",
+      title: "設置者名稱",
       value: normalize(formData.ownerName) || "先填設置者名稱"
     },
     {
@@ -279,8 +310,12 @@ function buildSectionSnapshot(formData) {
       value: normalize(formData.siteAddress) || "先填設置場所或地點"
     },
     {
-      title: "容量重點",
-      value: normalize(formData.installedNew) ? `${formData.installedNew} kW` : "先填新增設容量"
+      title: "併聯方式",
+      value: normalize(formData.contractType) || "先決定併聯方式"
+    },
+    {
+      title: "預計併聯日期",
+      value: normalize(formData.estimatedParallelDate) || "先填預計併聯日期"
     }
   ];
 }
@@ -303,7 +338,20 @@ function renderField(name, label, type, form, updateField, variant = "core") {
         <em className={`field-badge ${variant}`}>{badgeLabel}</em>
       </div>
       {hint ? <p className="field-note">{hint}</p> : null}
-      {type === "select" ? (
+      {type === "solarCategory" ? (
+        <div className="choice-group" role="radiogroup" aria-label={label}>
+          {["屋頂", "地面", "水面"].map((option) => (
+            <button
+              type="button"
+              key={option}
+              className={`choice-pill ${form[name] === option ? "is-active" : ""}`}
+              onClick={() => updateField(name, option)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : type === "select" ? (
         <select
           aria-label={label}
           value={form[name]}
@@ -426,9 +474,9 @@ export default function Page() {
           先把第一份太陽能送審表單做順。照著 3 步填，最後下載已填好的官方 Word。
         </p>
         <div className="hero-ribbon">
-          <span>先填主要欄位</span>
-          <span>補充欄位另外展開</span>
-          <span>右側隨時看摘要</span>
+          <span>固定設備型別 第三型 / 太陽光電</span>
+          <span>預設聯絡窗口 {form.companyContactPerson || "未設定"} / {form.companyPhone || "未設定"}</span>
+          <span>可匯出格式 官方 Word</span>
         </div>
         <div className="hero-meta">
           <div className="progress-card">
@@ -466,11 +514,11 @@ export default function Page() {
             const totalCount = section.fields.length + detailFields.length;
 
             return (
-              <section className="panel" key={section.title}>
+              <section className="panel form-panel" key={section.title}>
                 <div className="panel-head">
                   <div className="section-title-row">
                     <div>
-                      <p className="section-step">STEP {index + 1}</p>
+                      <p className="section-step">SECTION {index + 1}</p>
                       <h2>{section.title}</h2>
                     </div>
                     <div className="section-meter">
@@ -480,11 +528,22 @@ export default function Page() {
                   </div>
                   <p>{section.description}</p>
                 </div>
+                {section.staticItems?.length ? (
+                  <div className="static-grid">
+                    {section.staticItems.map(([label, value]) => (
+                      <div className="static-card" key={label}>
+                        <span>{label}</span>
+                        <strong>{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="fields-grid">
                   {section.fields.map(([name, label, type]) =>
                     renderField(name, label, type, form, updateField, "core")
                   )}
                 </div>
+                {section.note ? <p className="section-note">{section.note}</p> : null}
                 {detailFields.length > 0 ? (
                   <details className="detail-block">
                     <summary>
@@ -508,7 +567,7 @@ export default function Page() {
           <section className="panel quick-panel sidebar-panel">
             <div className="panel-head">
               <h2>先看這裡</h2>
-              <p>左邊照著填，右邊隨時看摘要。先把缺漏補完，再按匯出就好。</p>
+              <p>先把左邊核心資料填完，再從這裡確認目前案件狀態。</p>
             </div>
             <div className="snapshot-grid">
               {sectionSnapshot.map((item) => (
@@ -524,7 +583,14 @@ export default function Page() {
               <PreviewItem label="聯絡人" value={form.contactPerson} />
               <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
             </div>
-
+            <div className="tip-card">
+              <h3>填寫提醒</h3>
+              <ul>
+                <li>申請日期可先留白，最後再補。</li>
+                <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
+                <li>若看到舊資料，先按一次清空草稿再重填。</li>
+              </ul>
+            </div>
             <div className="validation-card inline-validation">
               <h3>匯出前檢查</h3>
               {issues.length === 0 ? (
