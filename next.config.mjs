@@ -3,9 +3,9 @@ const isGithubPages = process.env.GITHUB_PAGES === "1";
 
 const nextConfig = {
   reactStrictMode: true,
+  output: "export",
   ...(isGithubPages
     ? {
-        output: "export",
         basePath: "/lihipdf",
         assetPrefix: "/lihipdf"
       }
