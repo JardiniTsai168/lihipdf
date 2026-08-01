@@ -12,7 +12,7 @@ await mkdir(path.join(distDir, "server"), { recursive: true });
 await mkdir(path.join(distDir, ".openai"), { recursive: true });
 await cp(outDir, path.join(distDir, "static"), { recursive: true });
 await cp(
-  path.join(projectRoot, "scripts", "sites-static-server.mjs"),
+  path.join(projectRoot, "scripts", "sites-static-server.cjs"),
   path.join(distDir, "server", "index.js")
 );
 await cp(path.join(projectRoot, ".openai", "hosting.json"), path.join(distDir, ".openai", "hosting.json"));
