@@ -24,18 +24,20 @@ const sections = [
     title: "案件資料",
     description: "直接開始做案件，不先卡設定。",
     fields: [
-      ["caseNumber", "編號", "text"],
-      ["districtOffice", "區處", "text"],
       ["applicationDate", "申請日期", "date"],
       ["ownerName", "設置者名稱", "text"],
       ["principalName", "負責人", "text"],
-      ["electricNumber", "電號", "text"],
       ["ownerPhone", "連絡電話", "tel"],
       ["ownerAddress", "通訊處", "text"],
       ["siteAddress", "設置場所或地點", "text"],
       ["contactPerson", "連絡人", "text"],
       ["contactPhone", "連絡人電話", "tel"],
       ["contactAddress", "連絡人通訊處", "text"]
+    ],
+    detailFields: [
+      ["caseNumber", "編號", "text"],
+      ["districtOffice", "區處", "text"],
+      ["electricNumber", "電號", "text"]
     ]
   },
   {
@@ -43,23 +45,51 @@ const sections = [
     description: "只保留第一份表單真正要填進文件的核心欄位。",
     fields: [
       ["solarCategory", "設置分類", "select"],
-      ["installedExisting", "裝置容量_既設_瓩", "number"],
       ["installedNew", "裝置容量_新增設_瓩", "number"],
       ["installedTotal", "裝置容量_合計_瓩", "number"],
-      ["saleExisting", "躉售容量_既設_瓩", "number"],
       ["saleNew", "躉售容量_新增設_瓩", "number"],
       ["saleTotal", "躉售容量_合計_瓩", "number"],
-      ["innerLineNumber", "內線號碼", "text"],
-      ["contractType", "契約別 / 併聯方式", "text"],
-      ["contractCapacity", "契約容量", "text"],
       ["boundaryVoltage", "責任分界點電壓", "text"],
       ["parallelPointVoltage", "併聯點電壓", "text"],
       ["estimatedParallelDate", "預計併聯日期", "date"],
-      ["relatedCaseNumber", "相關案件編號", "text"],
       ["otherNotes", "其他事項", "textarea"]
+    ],
+    detailFields: [
+      ["installedExisting", "裝置容量_既設_瓩", "number"],
+      ["saleExisting", "躉售容量_既設_瓩", "number"],
+      ["innerLineNumber", "內線號碼", "text"],
+      ["contractType", "契約別 / 併聯方式", "text"],
+      ["contractCapacity", "契約容量", "text"],
+      ["relatedCaseNumber", "相關案件編號", "text"]
     ]
   }
 ];
+
+const FIELD_HINTS = {
+  applicationDate: "例：2026-08-01",
+  ownerName: "例：王小明",
+  principalName: "例：王大明",
+  ownerPhone: "例：0912-345-678",
+  ownerAddress: "例：高雄市鼓山區明德路31號",
+  siteAddress: "例：高雄市大寮區光明路88號",
+  contactPerson: "例：陳先生",
+  contactPhone: "例：07-7338588",
+  contactAddress: "例：高雄市鳥松區大同路2-58號",
+  caseNumber: "內部案件編號",
+  districtOffice: "例：高雄區處",
+  electricNumber: "例：12-34-5678-90-1",
+  installedExisting: "沒有可留白",
+  installedNew: "例：9",
+  installedTotal: "例：9",
+  saleExisting: "沒有可留白",
+  saleNew: "例：9",
+  saleTotal: "例：9",
+  innerLineNumber: "例：IL-12",
+  contractType: "例：低壓併聯",
+  contractCapacity: "例：49.5kW",
+  estimatedParallelDate: "例：2026-12-31",
+  relatedCaseNumber: "若有前案再填"
+};
 
 function loadDraft() {
   if (typeof window === "undefined") return CASE_FORM_DEFAULTS;
@@ -102,11 +132,11 @@ function buildDocumentPayload(formData) {
   const normalizedOtherNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
 
   return {
-    caseNumber: "",
-    districtOffice: "",
+    caseNumber: normalize(formData.caseNumber),
+    districtOffice: normalize(formData.districtOffice),
     ownerName: normalize(formData.ownerName),
     principalName: normalize(formData.principalName),
-    electricNumber: "",
+    electricNumber: normalize(formData.electricNumber),
     ownerAddress: normalize(formData.ownerAddress),
     ownerPhone: normalize(formData.ownerPhone),
     siteAddress: normalize(formData.siteAddress),
@@ -114,19 +144,19 @@ function buildDocumentPayload(formData) {
     contactAddress: normalize(formData.contactAddress),
     contactPhone: normalize(formData.contactPhone),
     solarCategoryLine: solarCategoryLine(formData.solarCategory),
-    installedExisting: "",
+    installedExisting: normalize(formData.installedExisting),
     installedNew: normalize(formData.installedNew),
     installedTotal: normalize(formData.installedTotal),
-    saleExisting: "",
+    saleExisting: normalize(formData.saleExisting),
     saleNew: normalize(formData.saleNew),
     saleTotal: normalize(formData.saleTotal),
-    innerLineNumber: "",
-    contractType: "",
-    contractCapacity: "",
+    innerLineNumber: normalize(formData.innerLineNumber),
+    contractType: normalize(formData.contractType),
+    contractCapacity: normalize(formData.contractCapacity),
     boundaryVoltage: normalize(formData.boundaryVoltage),
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
-    relatedCaseNumber: "",
+    relatedCaseNumber: normalize(formData.relatedCaseNumber),
     otherNotes: normalizedOtherNotes,
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
@@ -261,6 +291,44 @@ function countFilledFields(formData, fields) {
   }, 0);
 }
 
+function renderField(name, label, type, form, updateField) {
+  const placeholder = FIELD_HINTS[name];
+
+  return (
+    <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
+      <span>{label}</span>
+      {type === "select" ? (
+        <select
+          aria-label={label}
+          value={form[name]}
+          onChange={(event) => updateField(name, event.target.value)}
+        >
+          <option value="屋頂">屋頂</option>
+          <option value="地面">地面</option>
+          <option value="水面">水面</option>
+        </select>
+      ) : type === "textarea" ? (
+        <textarea
+          aria-label={label}
+          rows={5}
+          placeholder={placeholder}
+          value={form[name]}
+          onChange={(event) => updateField(name, event.target.value)}
+        />
+      ) : (
+        <input
+          aria-label={label}
+          type={type}
+          inputMode={type === "number" ? "decimal" : undefined}
+          placeholder={placeholder}
+          value={form[name]}
+          onChange={(event) => updateField(name, event.target.value)}
+        />
+      )}
+    </label>
+  );
+}
+
 export default function Page() {
   const [form, setForm] = useState(CASE_FORM_DEFAULTS);
   const [mounted, setMounted] = useState(false);
@@ -279,9 +347,13 @@ export default function Page() {
 
   const validation = validateCaseForm(form);
   const issues = summarizeIssues(validation);
-  const totalFields = sections.reduce((sum, section) => sum + section.fields.length, 0);
+  const totalFields = sections.reduce(
+    (sum, section) => sum + section.fields.length + (section.detailFields?.length ?? 0),
+    0
+  );
   const filledFields = sections.reduce(
-    (sum, section) => sum + countFilledFields(form, section.fields),
+    (sum, section) =>
+      sum + countFilledFields(form, [...section.fields, ...(section.detailFields ?? [])]),
     0
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
@@ -378,8 +450,9 @@ export default function Page() {
       <div className="workspace-grid">
         <form className="form-stack">
           {sections.map((section, index) => {
-            const filledCount = countFilledFields(form, section.fields);
-            const totalCount = section.fields.length;
+            const detailFields = section.detailFields ?? [];
+            const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
+            const totalCount = section.fields.length + detailFields.length;
 
             return (
               <section className="panel" key={section.title}>
@@ -397,38 +470,24 @@ export default function Page() {
                   <p>{section.description}</p>
                 </div>
                 <div className="fields-grid">
-                  {section.fields.map(([name, label, type]) => (
-                    <label className={`field ${type === "textarea" ? "field-wide" : ""}`} key={name}>
-                      <span>{label}</span>
-                      {type === "select" ? (
-                        <select
-                          aria-label={label}
-                          value={form[name]}
-                          onChange={(event) => updateField(name, event.target.value)}
-                        >
-                          <option value="屋頂">屋頂</option>
-                          <option value="地面">地面</option>
-                          <option value="水面">水面</option>
-                        </select>
-                      ) : type === "textarea" ? (
-                        <textarea
-                          aria-label={label}
-                          rows={5}
-                          value={form[name]}
-                          onChange={(event) => updateField(name, event.target.value)}
-                        />
-                      ) : (
-                        <input
-                          aria-label={label}
-                          type={type}
-                          inputMode={type === "number" ? "decimal" : undefined}
-                          value={form[name]}
-                          onChange={(event) => updateField(name, event.target.value)}
-                        />
-                      )}
-                    </label>
-                  ))}
+                  {section.fields.map(([name, label, type]) =>
+                    renderField(name, label, type, form, updateField)
+                  )}
                 </div>
+                {detailFields.length > 0 ? (
+                  <details className="detail-block">
+                    <summary>
+                      補充欄位
+                      <span>{countFilledFields(form, detailFields)} / {detailFields.length}</span>
+                    </summary>
+                    <p className="detail-copy">這些欄位保留給進階案件，主流程先填上面那一區就行。</p>
+                    <div className="fields-grid detail-grid">
+                      {detailFields.map(([name, label, type]) =>
+                        renderField(name, label, type, form, updateField)
+                      )}
+                    </div>
+                  </details>
+                ) : null}
               </section>
             );
           })}

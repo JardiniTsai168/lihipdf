@@ -324,6 +324,48 @@ button:disabled {
   grid-column: 1 / -1;
 }
 
+.detail-block {
+  margin: 0 24px 24px;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 240, 246, 0.72), rgba(255, 255, 255, 0.96));
+}
+
+.detail-block summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.detail-block summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-block summary span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.detail-copy {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.detail-grid {
+  padding: 16px 0 0;
+}
+
 .preview-item {
   display: grid;
   gap: 6px;
