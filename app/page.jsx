@@ -24,9 +24,12 @@ const sections = [
     title: "案件資料",
     description: "直接開始做案件，不先卡設定。",
     fields: [
+      ["caseNumber", "編號", "text"],
+      ["districtOffice", "區處", "text"],
       ["applicationDate", "申請日期", "date"],
       ["ownerName", "設置者名稱", "text"],
       ["principalName", "負責人", "text"],
+      ["electricNumber", "電號", "text"],
       ["ownerPhone", "連絡電話", "tel"],
       ["ownerAddress", "通訊處", "text"],
       ["siteAddress", "設置場所或地點", "text"],
@@ -40,13 +43,19 @@ const sections = [
     description: "只保留第一份表單真正要填進文件的核心欄位。",
     fields: [
       ["solarCategory", "設置分類", "select"],
+      ["installedExisting", "裝置容量_既設_瓩", "number"],
       ["installedNew", "裝置容量_新增設_瓩", "number"],
       ["installedTotal", "裝置容量_合計_瓩", "number"],
+      ["saleExisting", "躉售容量_既設_瓩", "number"],
       ["saleNew", "躉售容量_新增設_瓩", "number"],
       ["saleTotal", "躉售容量_合計_瓩", "number"],
+      ["innerLineNumber", "內線號碼", "text"],
+      ["contractType", "契約別 / 併聯方式", "text"],
+      ["contractCapacity", "契約容量", "text"],
       ["boundaryVoltage", "責任分界點電壓", "text"],
       ["parallelPointVoltage", "併聯點電壓", "text"],
       ["estimatedParallelDate", "預計併聯日期", "date"],
+      ["relatedCaseNumber", "相關案件編號", "text"],
       ["otherNotes", "其他事項", "textarea"]
     ]
   }
