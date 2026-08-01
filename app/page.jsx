@@ -582,9 +582,7 @@ export default function Page() {
       <div className="shell">
         <section className="hero">
           <div className="hero-copy">
-            <div className="eyebrow">Solar Parallel Review Workflow</div>
-            <h1>把併聯審查表單，整理成真的看得懂的工作頁</h1>
-            <div className="document-note">再生能源發電設備併聯審查申請表</div>
+            <h1>再生能源發電設備併聯審查申請表</h1>
             <p>
               這版直接比照你給的參考頁邏輯做成閱讀型流程。主欄位留在前段，補充欄位往後收，
               讓送審資料可以一路往下填，不用在一大坨表單裡迷路。
@@ -613,9 +611,6 @@ export default function Page() {
 
             return (
               <section className="section" key={section.title}>
-                <div className="section-index">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                </div>
                 <div className={`section-card ${section.title === "案件補充與申請選項" ? "is-tight" : ""}`}>
                   <div className="section-header">
                     <div>
@@ -666,9 +661,6 @@ export default function Page() {
             );
           })}
             <section className="section final-check">
-              <div className="section-index">
-                <span>{String(sections.length + 1).padStart(2, "0")}</span>
-              </div>
               <div className="section-card is-tight">
                 <div className="section-header">
                   <div>
