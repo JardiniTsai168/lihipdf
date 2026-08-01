@@ -30,15 +30,19 @@ describe("single-form MVP page", () => {
     expect(screen.getAllByText("高雄市鼓山區明德路31號").length).toBeGreaterThan(0);
   });
 
-  it("reveals inner-line fields and switches installation categories by energy type", () => {
+  it("reveals inner-line fields and lists all installation categories", () => {
     render(<Page />);
 
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "預計併聯方式" })).getAllByRole("button")[1]);
     expect(screen.getByPlaceholderText("併聯用戶內線時填寫")).toBeInTheDocument();
     expect(screen.getByLabelText("契約容量_瓩")).toBeInTheDocument();
 
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: "再生能源類別" })).getAllByRole("button")[3]);
-    expect(within(screen.getByRole("radiogroup", { name: "設置分類" })).getAllByRole("button")[0]).toHaveTextContent("陸域");
-    expect(within(screen.getByRole("radiogroup", { name: "設置分類" })).getAllByRole("button")[1]).toHaveTextContent("離岸");
+    expect(screen.getAllByText("太陽光電").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("風力").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("生質能").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("廢棄物").length).toBeGreaterThan(0);
+
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "風力設置分類" })).getByRole("button", { name: /離岸/ }));
+    expect(within(screen.getByRole("radiogroup", { name: "再生能源類別" })).getByRole("button", { name: /風力/ })).toHaveClass("is-active");
   });
 });

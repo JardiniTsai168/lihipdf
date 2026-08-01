@@ -514,6 +514,31 @@ select:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.installation-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.installation-group {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(205, 185, 167, 0.68);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.installation-group-label {
+  color: var(--ink);
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.installation-choice-group {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .choice-pill {
   display: inline-flex;
   justify-content: center;
@@ -762,6 +787,10 @@ select:focus {
 
   .choice-group.is-binary,
   .choice-group.is-sale-mode {
+    grid-template-columns: 1fr;
+  }
+
+  .installation-choice-group {
     grid-template-columns: 1fr;
   }
 }

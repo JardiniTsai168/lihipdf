@@ -499,11 +499,9 @@ function renderField(name, label, type, form, updateField, variant = "core") {
   const badgeLabel = variant === "detail" ? "補充" : "主要";
   const state = fieldState(name, form[name], form);
   const isRequired = isFieldRequired(name, form);
-  const installationOptions = INSTALLATION_CATEGORY_GROUPS[form.energyCategory] ?? [];
   const optionMap = {
     deviceType: DEVICE_TYPE_OPTIONS,
     energyCategory: ENERGY_CATEGORY_OPTIONS,
-    installationCategory: installationOptions,
     parallelMethod: ["台電外線", "用戶內線"],
     saleMode: [
       "僅併聯不躉售",
@@ -596,8 +594,32 @@ function renderField(name, label, type, form, updateField, variant = "core") {
               onChange={(event) => updateField(name, event.target.value)}
             />
           </div>
-        ) : type === "installationCategory" && installationOptions.length === 0 ? (
-          <div className="hint">此能源類別免勾選設置分類。</div>
+        ) : type === "installationCategory" ? (
+          <div className="installation-groups" role="group" aria-label={label}>
+            {Object.entries(INSTALLATION_CATEGORY_GROUPS).map(([groupLabel, options]) => (
+              <div className="installation-group" key={groupLabel}>
+                <div className="installation-group-label">{groupLabel}</div>
+                <div className="choice-group installation-choice-group" role="radiogroup" aria-label={`${groupLabel}設置分類`}>
+                  {options.map((option) => (
+                    <button
+                      type="button"
+                      key={option}
+                      className={`choice-pill ${form.solarCategory === option ? "is-active" : ""}`}
+                      onClick={() => {
+                        updateField("energyCategory", groupLabel);
+                        updateField(name, option);
+                      }}
+                    >
+                      <span className="choice-mark" aria-hidden="true">
+                        {form.solarCategory === option ? "■" : "□"}
+                      </span>
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : optionMap[type] ? (
           <div
             className={`choice-group${type === "saleMode" ? " is-sale-mode" : ""}${type === "parallelMethod" ? " is-binary" : ""}`}
