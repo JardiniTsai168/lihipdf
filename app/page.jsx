@@ -302,20 +302,18 @@ function PreviewItem({ label, value }) {
 function buildSectionSnapshot(formData) {
   return [
     {
-      title: "設置者名稱",
+      title: "固定設備型別",
+      value: "第三型 / 太陽光電"
+    },
+    {
+      title: "預設聯絡窗口",
+      value: normalize(formData.companyContactPerson) && normalize(formData.companyPhone)
+        ? `${formData.companyContactPerson} / ${formData.companyPhone}`
+        : "先填公司聯絡人 / 電話"
+    },
+    {
+      title: "目前案件",
       value: normalize(formData.ownerName) || "先填設置者名稱"
-    },
-    {
-      title: "案件地點",
-      value: normalize(formData.siteAddress) || "先填設置場所或地點"
-    },
-    {
-      title: "併聯方式",
-      value: normalize(formData.contractType) || "先決定併聯方式"
-    },
-    {
-      title: "預計併聯日期",
-      value: normalize(formData.estimatedParallelDate) || "先填預計併聯日期"
     }
   ];
 }
@@ -467,144 +465,140 @@ export default function Page() {
 
   return (
     <main className="page-shell">
-      <section className="hero-card">
-        <p className="eyebrow">Solar MVP</p>
-        <h1>一頁填完，直接匯出官方 Word</h1>
-        <p className="hero-text">
-          先把第一份太陽能送審表單做順。照著 3 步填，最後下載已填好的官方 Word。
-        </p>
-        <div className="hero-ribbon">
-          <span>固定設備型別 第三型 / 太陽光電</span>
-          <span>預設聯絡窗口 {form.companyContactPerson || "未設定"} / {form.companyPhone || "未設定"}</span>
-          <span>可匯出格式 官方 Word</span>
-        </div>
-        <div className="hero-meta">
-          <div className="progress-card">
-            <span>完成度</span>
-            <strong>{filledFields} / {totalFields}</strong>
-            <em>{completionRate}%</em>
+      <div className="shell">
+        <section className="hero">
+          <div className="eyebrow">Solar Workflow MVP</div>
+          <h1>一頁填完，直接匯出官方 Word</h1>
+          <div className="document-note">再生能源發電設備併聯審查申請表</div>
+          <p>
+            先把案件核心資料填完，再直接匯出台電用的 Word。畫面只保留真的會用到的欄位，避免邊填邊找。
+          </p>
+          <div className="overview">
+            {sectionSnapshot.map((item) => (
+              <div className="overview-card" key={item.title}>
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
           </div>
-          <div className="progress-card">
-            <span>目前狀態</span>
-            <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
-            <em>{issues.length === 0 ? "欄位已補齊" : "先把缺漏補完"}</em>
+          <div className="overview">
+            <div className="overview-card">
+              <span>完成度</span>
+              <strong>{filledFields} / {totalFields} ({completionRate}%)</strong>
+            </div>
+            <div className="overview-card">
+              <span>目前狀態</span>
+              <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
+            </div>
+            <div className="overview-card">
+              <span>可匯出格式</span>
+              <strong>官方 Word</strong>
+            </div>
           </div>
-        </div>
-        <div className="action-row hero-actions">
-          <button type="button" className="primary" onClick={exportDocx} disabled={busy}>
-            {busy ? "匯出中..." : "匯出官方 Word"}
-          </button>
-          <button type="button" className="secondary" onClick={applyCompanyDefaults}>
-            套用公司資料到聯絡人
-          </button>
-          <button type="button" className="ghost" onClick={clearDraft}>
-            清空草稿
-          </button>
-        </div>
-        <p className="status-line" role="status">
-          {status}
-        </p>
-      </section>
+          <div className="actions">
+            <button className="primary" type="button" onClick={exportDocx} disabled={busy}>
+              {busy ? "匯出中..." : "匯出官方 Word"}
+            </button>
+            <button className="secondary" type="button" onClick={applyCompanyDefaults}>
+              套用公司資料
+            </button>
+            <button className="danger" type="button" onClick={clearDraft}>
+              清空草稿
+            </button>
+          </div>
+          <div className="status" role="status">{status}</div>
+        </section>
 
-      <div className="workspace-grid">
-        <form className="form-stack">
+        <form>
           {sections.map((section, index) => {
             const detailFields = section.detailFields ?? [];
             const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
             const totalCount = section.fields.length + detailFields.length;
 
             return (
-              <section className="panel form-panel" key={section.title}>
-                <div className="panel-head">
-                  <div className="section-title-row">
-                    <div>
-                      <p className="section-step">SECTION {index + 1}</p>
-                      <h2>{section.title}</h2>
-                    </div>
-                    <div className="section-meter">
-                      <strong>{filledCount} / {totalCount}</strong>
-                      <span>已填欄位</span>
-                    </div>
-                  </div>
+              <section className="section" key={section.title}>
+                <div className="section-header">
+                  <h2>{index + 1}. {section.title}</h2>
                   <p>{section.description}</p>
                 </div>
-                {section.staticItems?.length ? (
-                  <div className="static-grid">
-                    {section.staticItems.map(([label, value]) => (
-                      <div className="static-card" key={label}>
-                        <span>{label}</span>
-                        <strong>{value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="fields-grid">
-                  {section.fields.map(([name, label, type]) =>
-                    renderField(name, label, type, form, updateField, "core")
-                  )}
-                </div>
-                {section.note ? <p className="section-note">{section.note}</p> : null}
-                {detailFields.length > 0 ? (
-                  <details className="detail-block">
-                    <summary>
-                      補充欄位
-                      <span>{countFilledFields(form, detailFields)} / {detailFields.length}</span>
-                    </summary>
-                    <p className="detail-copy">這些欄位保留給進階案件，主流程先填上面那一區就行。</p>
-                    <div className="fields-grid detail-grid">
-                      {detailFields.map(([name, label, type]) =>
-                        renderField(name, label, type, form, updateField, "detail")
-                      )}
+                <div className={`section-body ${section.title === "案件補充與申請選項" ? "tight" : ""}`}>
+                  {section.staticItems?.length ? (
+                    <div className="grid cols-2">
+                      {section.staticItems.map(([label, value]) => (
+                        <div className="soft-panel" key={label}>
+                          <div className="hint">{label}</div>
+                          <div className="value-chip">{value}</div>
+                        </div>
+                      ))}
                     </div>
-                  </details>
-                ) : null}
+                  ) : null}
+
+                  <div className="overview-card section-progress">
+                    <span>本段完成度</span>
+                    <strong>{filledCount} / {totalCount}</strong>
+                  </div>
+
+                  <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
+                    {section.fields.map(([name, label, type]) =>
+                      renderField(name, label, type, form, updateField, "core")
+                    )}
+                  </div>
+
+                  {section.note ? <div className="soft-panel"><div className="hint">{section.note}</div></div> : null}
+
+                  {detailFields.length > 0 ? (
+                    <details className="detail-shell">
+                      <summary>補充欄位 ({countFilledFields(form, detailFields)} / {detailFields.length})</summary>
+                      <div className="section-body tight">
+                        <div className="hint">這些欄位留給進階案件或台電補件時再填，不先塞進主流程。</div>
+                        <div className="grid cols-2">
+                          {detailFields.map(([name, label, type]) =>
+                            renderField(name, label, type, form, updateField, "detail")
+                          )}
+                        </div>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
               </section>
             );
           })}
-        </form>
-
-        <aside className="sidebar-stack">
-          <section className="panel quick-panel sidebar-panel">
-            <div className="panel-head">
-              <h2>先看這裡</h2>
-              <p>先把左邊核心資料填完，再從這裡確認目前案件狀態。</p>
+          <section className="section">
+            <div className="section-header">
+              <h2>8. 匯出前檢查</h2>
+              <p>先看這裡</p>
+              <p>最後確認目前草稿缺什麼，避免匯出後還要回頭找欄位。</p>
             </div>
-            <div className="snapshot-grid">
-              {sectionSnapshot.map((item) => (
-                <div className="snapshot-card" key={item.title}>
-                  <span>{item.title}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="quick-grid">
-              <PreviewItem label="設置者名稱" value={form.ownerName} />
-              <PreviewItem label="案件地址" value={form.siteAddress} />
-              <PreviewItem label="聯絡人" value={form.contactPerson} />
-              <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
-            </div>
-            <div className="tip-card">
-              <h3>填寫提醒</h3>
-              <ul>
-                <li>申請日期可先留白，最後再補。</li>
-                <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
-                <li>若看到舊資料，先按一次清空草稿再重填。</li>
-              </ul>
-            </div>
-            <div className="validation-card inline-validation">
-              <h3>匯出前檢查</h3>
-              {issues.length === 0 ? (
-                <p className="valid">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
-              ) : (
-                <ul>
-                  {issues.map((issue) => (
-                    <li key={issue}>{issue}</li>
-                  ))}
+            <div className="section-body tight">
+              <div className="grid cols-2">
+                <PreviewItem label="設置者名稱" value={form.ownerName} />
+                <PreviewItem label="案件地址" value={form.siteAddress} />
+                <PreviewItem label="聯絡人" value={form.contactPerson} />
+                <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
+              </div>
+              <div className="soft-panel">
+                <div className="hint">填寫提醒</div>
+                <ul className="footer-note">
+                  <li>申請日期可先留白，最後再補。</li>
+                  <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
+                  <li>若看到舊資料，先按一次清空草稿再重填。</li>
                 </ul>
-              )}
+              </div>
+              <div className="soft-panel">
+                <div className="hint">匯出前檢查</div>
+                {issues.length === 0 ? (
+                  <p className="footer-note">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
+                ) : (
+                  <ul className="footer-note">
+                    {issues.map((issue) => (
+                      <li key={issue}>{issue}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </section>
-        </aside>
+        </form>
       </div>
     </main>
   );
