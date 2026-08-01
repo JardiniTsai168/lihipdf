@@ -73,20 +73,20 @@ const sections = [
     ]
   },
   {
-    title: "案件補充與申請選項",
-    description: "把 Word 下半部原本藏在其他事項裡的申請選項拆開，額外備註再另外填。",
+    title: "案件識別資料",
+    description: "把 Word 上有、但不屬於主流程的案件識別欄位獨立放一區。",
     fields: [
-      ["detailNegotiation", "先行細部協商", "requestToggle"],
-      ["detailNegotiationDate", "細部協商勾選日期", "date"],
-      ["externalLineDesign", "先行外線設計", "requestToggle"],
-      ["externalLineDesignDate", "外線設計勾選日期", "date"],
-      ["otherNotes", "其他事項", "textarea"]
-    ],
-    detailFields: [
       ["caseNumber", "編號", "text"],
       ["districtOffice", "區處", "text"],
       ["electricNumber", "電號", "text"],
       ["relatedCaseNumber", "相關案件編號", "text"]
+    ]
+  },
+  {
+    title: "其他事項",
+    description: "保留自由補充說明，不再混進我自己加出來的申請選項。",
+    fields: [
+      ["otherNotes", "其他事項", "textarea"]
     ]
   },
   {
@@ -128,16 +128,12 @@ const FIELD_HINTS = {
   contractCapacity: "例：49.5",
   estimatedParallelDate: "例：2026-12-31",
   relatedCaseNumber: "若有前案再填",
-  detailNegotiation: "是否需台電先行細部協商",
-  detailNegotiationDate: "例：2026-08-01",
-  externalLineDesign: "是否需台電先行外線設計",
-  externalLineDesignDate: "例：2026-08-15",
   companyName: "例：某某能源股份有限公司",
   companyContactPerson: "例：鄒侑廷",
   companyPhone: "例：0939-255-192",
   companyAddress: "例：高雄市前鎮區成功路88號",
   companyTaxId: "例：12345678",
-  otherNotes: "若有補充說明再填，結構化申請選項會自動帶進 Word"
+  otherNotes: "若有補充說明再填"
 };
 
 function loadDraft() {
@@ -177,32 +173,6 @@ function solarCategoryLine(value) {
     .join("  ");
 }
 
-function checkboxLine(selected, value, label) {
-  return `${selected === value ? "■" : "□"}${label}`;
-}
-
-function requestPair(selected) {
-  return `${checkboxLine(selected, "需", "需")}${checkboxLine(selected, "不需", "不需")}`;
-}
-
-function buildStructuredNotes(formData) {
-  const notes = [];
-  const extraNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
-
-  notes.push(
-    `配電級再生能源${requestPair(formData.detailNegotiation)} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${rocDateString(formData.detailNegotiationDate)}`
-  );
-  notes.push(
-    `配電級再生能源${requestPair(formData.externalLineDesign)} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${rocDateString(formData.externalLineDesignDate)}`
-  );
-
-  if (extraNotes) {
-    notes.push(extraNotes);
-  }
-
-  return notes.join("\n");
-}
-
 function buildDocumentPayload(formData) {
   return {
     caseNumber: normalize(formData.caseNumber),
@@ -232,7 +202,7 @@ function buildDocumentPayload(formData) {
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: buildStructuredNotes(formData),
+    otherNotes: normalize(formData.otherNotes).replace(/\r/g, "\n"),
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }
@@ -465,18 +435,18 @@ function renderField(name, label, type, form, updateField, variant = "core") {
           </div>
         </div>
         {hint ? <p className="field-note">{hint}</p> : null}
-        {type === "solarCategory" || type === "parallelMethod" || type === "saleMode" || type === "requestToggle" ? (
+        {type === "solarCategory" || type === "parallelMethod" || type === "saleMode" ? (
           <div
-            className={`choice-group${type === "saleMode" ? " is-sale-mode" : ""}${type === "parallelMethod" || type === "requestToggle" ? " is-binary" : ""}`}
+            className={`choice-group${type === "saleMode" ? " is-sale-mode" : ""}${type === "parallelMethod" ? " is-binary" : ""}`}
             role="radiogroup"
             aria-label={label}
           >
-            {(type === "solarCategory"
-              ? ["屋頂", "地面", "水面"]
-              : type === "parallelMethod"
-                ? ["台電外線", "用戶內線"]
-                : type === "saleMode"
-                  ? [
+            {(
+              type === "solarCategory"
+                ? ["屋頂", "地面", "水面"]
+                : type === "parallelMethod"
+                  ? ["台電外線", "用戶內線"]
+                  : [
                       "僅併聯不躉售",
                       "全額躉售",
                       "自發自用(餘電躉售)",
@@ -484,7 +454,7 @@ function renderField(name, label, type, form, updateField, variant = "core") {
                       "轉供餘電躉售",
                       "轉供自用(第二、三型)"
                     ]
-                  : ["需", "不需"]).map((option) => (
+            ).map((option) => (
               <button
                 type="button"
                 key={option}

@@ -45,28 +45,6 @@ function checkboxLine(selected, value, label) {
   return `${selected === value ? "■" : "□"}${label}`;
 }
 
-function requestPair(selected) {
-  return `${checkboxLine(selected, "需", "需")}${checkboxLine(selected, "不需", "不需")}`;
-}
-
-function buildStructuredNotes(formData) {
-  const notes = [];
-
-  notes.push(
-    `配電級再生能源${requestPair(formData.detailNegotiation)} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${rocDateString(formData.detailNegotiationDate)}`
-  );
-  notes.push(
-    `配電級再生能源${requestPair(formData.externalLineDesign)} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${rocDateString(formData.externalLineDesignDate)}`
-  );
-
-  const extraNotes = normalize(formData.otherNotes).replace(/\r/g, "\n");
-  if (extraNotes) {
-    notes.push(extraNotes);
-  }
-
-  return notes.join("\n");
-}
-
 export function buildDocumentPayload(data) {
   const formData = parseCaseForm(data);
 
@@ -98,7 +76,7 @@ export function buildDocumentPayload(data) {
     parallelPointVoltage: normalize(formData.parallelPointVoltage),
     estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
     relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: buildStructuredNotes(formData) || DEFAULT_OTHER_NOTES,
+    otherNotes: normalize(formData.otherNotes).replace(/\r/g, "\n") || DEFAULT_OTHER_NOTES,
     applicationDateRoc: rocDateString(formData.applicationDate)
   };
 }

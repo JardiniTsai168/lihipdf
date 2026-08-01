@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-export const DEFAULT_OTHER_NOTES = `配電級再生能源■需□不需 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：
-配電級再生能源■需□不需 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：`;
+export const DEFAULT_OTHER_NOTES = "";
 
 export const CASE_FORM_DEFAULTS = {
   documentTitle: "再生能源發電設備併聯審查申請表",
@@ -39,10 +38,6 @@ export const CASE_FORM_DEFAULTS = {
   parallelPointVoltage: "單 相 3 線 110/220 伏",
   estimatedParallelDate: "",
   relatedCaseNumber: "",
-  detailNegotiation: "需",
-  detailNegotiationDate: "",
-  externalLineDesign: "需",
-  externalLineDesignDate: "",
   otherNotes: ""
 };
 
@@ -112,10 +107,6 @@ const caseFormSchema = z.object({
   parallelPointVoltage: z.string().trim().min(1, REQUIRED_MESSAGES.parallelPointVoltage),
   estimatedParallelDate: z.string().trim().min(1, REQUIRED_MESSAGES.estimatedParallelDate),
   relatedCaseNumber: z.string(),
-  detailNegotiation: z.enum(["需", "不需"]),
-  detailNegotiationDate: z.string(),
-  externalLineDesign: z.enum(["需", "不需"]),
-  externalLineDesignDate: z.string(),
   otherNotes: z.string()
 }).superRefine((data, ctx) => {
   if (data.saleMode !== "僅併聯不躉售") {

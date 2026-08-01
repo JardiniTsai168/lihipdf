@@ -38,8 +38,6 @@ describe("case form schema", () => {
       contractType: "低壓電力",
       contractCapacity: "49.5",
       saleMode: "全額躉售",
-      detailNegotiation: "需",
-      externalLineDesign: "不需",
       estimatedParallelDate: "2026-12-31"
     });
 

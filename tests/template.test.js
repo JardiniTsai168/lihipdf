@@ -33,10 +33,6 @@ describe("document payload", () => {
       estimatedParallelDate: "2026-12-31",
       applicationDate: "2026-07-30",
       relatedCaseNumber: "A-0007",
-      detailNegotiation: "需",
-      detailNegotiationDate: "2026-07-15",
-      externalLineDesign: "不需",
-      externalLineDesignDate: "2026-07-20",
       otherNotes: "補充備註"
     });
 
@@ -52,9 +48,6 @@ describe("document payload", () => {
     expect(payload.relatedCaseNumber).toBe("A-0007");
     expect(payload.solarCategoryLine).toContain("■屋頂");
     expect(payload.applicationDateRoc).toBe("115 年 7 月 30 日");
-    expect(payload.otherNotes).toContain("■需□不需");
-    expect(payload.otherNotes).toContain("□需■不需");
-    expect(payload.otherNotes).toContain("115 年 7 月 15 日");
-    expect(payload.otherNotes).toContain("補充備註");
+    expect(payload.otherNotes).toBe("補充備註");
   });
 });
