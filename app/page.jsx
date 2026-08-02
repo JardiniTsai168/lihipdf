@@ -343,6 +343,64 @@ function renderField(name, label, type, form, updateField, variant = "core") {
   );
 }
 
+function renderCapacityRow(label, existingField, newField, totalField, form, updateField) {
+  return (
+    <div className="capacity-row" key={label}>
+      <div className="capacity-row-label">
+        <span>{label}</span>
+      </div>
+      <div className="capacity-row-fields">
+        {renderField(existingField, "既設", "number", form, updateField, "detail")}
+        {renderField(newField, "新增設", "number", form, updateField, "core")}
+        {renderField(totalField, "合計", "number", form, updateField, "core")}
+      </div>
+    </div>
+  );
+}
+
+function renderEquipmentCapacitySection(form, updateField) {
+  return (
+    <div className="equipment-shell">
+      <div className="equipment-top">
+        <div className="equipment-card equipment-card-wide">
+          <div className="equipment-card-head">
+            <div className="hint">設備定位</div>
+            <h3>先選設備型別與能源類別</h3>
+          </div>
+          <div className="equipment-card-grid">
+            {renderField("deviceType", "再生能源發電設備型別", "deviceType", form, updateField, "core")}
+            {renderField("energyCategory", "再生能源類別", "energyCategory", form, updateField, "core")}
+          </div>
+        </div>
+        <div className="equipment-card">
+          <div className="equipment-card-head">
+            <div className="hint">設置分類</div>
+            <h3>案場落點</h3>
+          </div>
+          {renderField("solarCategory", "設置分類", "installationCategory", form, updateField, "core")}
+        </div>
+      </div>
+
+      <div className="equipment-card capacity-card">
+        <div className="equipment-card-head">
+          <div className="hint">容量整理</div>
+          <h3>把裝置容量與躉售容量分開看</h3>
+        </div>
+        <div className="capacity-table">
+          <div className="capacity-table-head">
+            <span>項目</span>
+            <span>既設</span>
+            <span>新增設</span>
+            <span>合計</span>
+          </div>
+          {renderCapacityRow("裝置容量", "installedExisting", "installedNew", "installedTotal", form, updateField)}
+          {renderCapacityRow("躉售容量", "saleExisting", "saleNew", "saleTotal", form, updateField)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [form, setForm] = useState(createAppDraftDefaults());
   const [attachments, setAttachments] = useState([]);
@@ -658,10 +716,14 @@ export default function Page() {
                       </div>
                     </div>
                     <p className="section-description">{section.description}</p>
-                    <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
-                      {section.fields.map(([name, label, type]) => renderField(name, label, type, form, updateField, "core"))}
-                    </div>
-                    {detailFields.length > 0 ? (
+                    {section.title === "設備與容量" ? (
+                      renderEquipmentCapacitySection(form, updateField)
+                    ) : (
+                      <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
+                        {section.fields.map(([name, label, type]) => renderField(name, label, type, form, updateField, "core"))}
+                      </div>
+                    )}
+                    {detailFields.length > 0 && section.title !== "設備與容量" ? (
                       <details className="detail-shell">
                         <summary>補充欄位 ({countFilledFields(form, detailFields)} / {detailFields.length})</summary>
                         <div className="detail-panel">

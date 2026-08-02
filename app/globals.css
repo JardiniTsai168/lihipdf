@@ -313,6 +313,126 @@ h1 {
   gap: 14px;
 }
 
+.equipment-shell,
+.equipment-top,
+.equipment-card-grid,
+.capacity-table,
+.capacity-row-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.equipment-top {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.equipment-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(205, 185, 167, 0.74);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 250, 0.96), rgba(255, 246, 249, 0.88));
+}
+
+.equipment-card-wide {
+  min-height: 100%;
+}
+
+.equipment-card-head {
+  display: grid;
+  gap: 6px;
+}
+
+.equipment-card-head h3 {
+  font-size: 1.15rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.equipment-card-grid {
+  grid-template-columns: 1fr;
+}
+
+.capacity-card {
+  gap: 18px;
+}
+
+.capacity-table {
+  gap: 12px;
+}
+
+.capacity-table-head,
+.capacity-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.capacity-table-head {
+  padding: 0 6px;
+}
+
+.capacity-table-head span {
+  color: var(--muted);
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.capacity-table-head span:last-child,
+.capacity-row-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.capacity-row {
+  padding: 16px;
+  border: 1px solid rgba(205, 185, 167, 0.74);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.capacity-row-label {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 6px;
+}
+
+.capacity-row-label span {
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.capacity-row-fields .field {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.capacity-row-fields .field-rail {
+  display: none;
+}
+
+.capacity-row-fields .field-frame {
+  min-height: 100%;
+  padding: 14px;
+}
+
+.capacity-row-fields .field-head {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capacity-row-fields .field-meta {
+  justify-content: flex-start;
+}
+
 .compact-grid,
 .compact-fields {
   display: grid;
@@ -910,6 +1030,7 @@ select:focus {
   .overview,
   .compact-grid,
   .document-grid,
+  .equipment-top,
   .static-grid,
   .grid.cols-2,
   .review-grid,
@@ -945,6 +1066,19 @@ select:focus {
   }
 
   .installation-choice-group {
+    grid-template-columns: 1fr;
+  }
+
+  .capacity-table-head,
+  .capacity-row {
+    grid-template-columns: 1fr;
+  }
+
+  .capacity-table-head {
+    display: none;
+  }
+
+  .capacity-row-fields {
     grid-template-columns: 1fr;
   }
 
