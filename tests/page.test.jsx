@@ -11,6 +11,7 @@ describe("single-form MVP page", () => {
     expect(screen.getByRole("heading", { name: "lihiPDF 文件框架版" })).toBeInTheDocument();
     expect(screen.getByLabelText("併聯審查申請表")).toBeInTheDocument();
     expect(screen.getByLabelText("加入附件")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "儲存公司資料" })).toBeInTheDocument();
     expect(screen.getByLabelText("設置者名稱")).toBeInTheDocument();
     expect(screen.getByLabelText("預計併聯方式")).toBeInTheDocument();
     expect(screen.getByLabelText("裝置容量_新增設_瓩")).toBeInTheDocument();
@@ -62,5 +63,24 @@ describe("single-form MVP page", () => {
 
     expect(agreement).toBeChecked();
     expect(screen.getAllByText("併聯協議書").length).toBeGreaterThan(0);
+  });
+
+  it("saves and reapplies company defaults from the sidebar card", () => {
+    render(<Page />);
+
+    fireEvent.change(screen.getByLabelText("公司聯絡人"), {
+      target: { value: "鄒侑廷" }
+    });
+    fireEvent.change(screen.getByLabelText("公司電話"), {
+      target: { value: "0939-255-192" }
+    });
+    fireEvent.change(screen.getByLabelText("公司地址"), {
+      target: { value: "高雄市前鎮區成功路88號" }
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "儲存公司資料" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "套用到案件" })[0]);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/公司預設資料已儲存|已把公司預設資料套用到案件聯絡資訊/);
   });
 });

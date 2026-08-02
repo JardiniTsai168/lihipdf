@@ -37,6 +37,10 @@ const BASE_REQUIRED_FIELDS = new Set([
   "parallelPointVoltage",
   "estimatedParallelDate"
 ]);
+const COMPANY_DEFAULTS_STORAGE_KEY = "lihipdf_company_defaults_v1";
+const MAIN_SECTIONS = CASE_SECTIONS.filter(
+  (section) => section.title !== "公司預設資料" && section.title !== "文件資訊"
+);
 
 function PreviewItem({ label, value }) {
   return (
@@ -55,13 +59,15 @@ function loadDraft() {
   const fallback = createAppDraftDefaults();
   if (typeof window === "undefined") return fallback;
 
+  const companyDefaults = loadCompanyDefaults();
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return fallback;
+  if (!raw) return { ...fallback, ...companyDefaults };
 
   try {
     const parsed = JSON.parse(raw);
     return {
       ...fallback,
+      ...companyDefaults,
       ...parsed,
       selectedDocuments: {
         ...fallback.selectedDocuments,
@@ -73,8 +79,29 @@ function loadDraft() {
   }
 }
 
+function loadCompanyDefaults() {
+  if (typeof window === "undefined") return {};
+
+  const raw = window.localStorage.getItem(COMPANY_DEFAULTS_STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 function persistDraft(form) {
-  const { selectedDocuments, ...caseData } = form;
+  const {
+    selectedDocuments,
+    companyName,
+    companyContactPerson,
+    companyPhone,
+    companyAddress,
+    companyTaxId,
+    ...caseData
+  } = form;
   window.localStorage.setItem(
     STORAGE_KEY,
     JSON.stringify({
@@ -345,26 +372,26 @@ export default function Page() {
 
   const validation = validateCaseForm(form);
   const issues = summarizeIssues(validation);
-  const totalFields = CASE_SECTIONS.reduce((sum, section) => {
+  const totalFields = MAIN_SECTIONS.reduce((sum, section) => {
     const visibleFields = [...section.fields, ...(section.detailFields ?? [])].filter(([name]) =>
       isFieldVisible(name, form)
     );
     return sum + visibleFields.length;
   }, 0);
-  const filledFields = CASE_SECTIONS.reduce(
+  const filledFields = MAIN_SECTIONS.reduce(
     (sum, section) => sum + countFilledFields(form, [...section.fields, ...(section.detailFields ?? [])]),
     0
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
   const overviewCards = buildOverviewCards(form, attachments);
-  const missingRequired = CASE_SECTIONS
+  const missingRequired = MAIN_SECTIONS
     .flatMap((section) => [...section.fields, ...(section.detailFields ?? [])].map(([name]) => name))
     .filter((name, index, names) => names.indexOf(name) === index)
     .filter((name) => isFieldVisible(name, form))
     .filter((name) => isFieldRequired(name, form) && !normalize(form[name]));
   const topMissing = missingRequired
     .slice(0, 5)
-    .map((name) => CASE_SECTIONS.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
+    .map((name) => MAIN_SECTIONS.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
   const selectedDocumentIds = getSelectedDocumentIds(form.selectedDocuments);
   const readyDocumentIds = getReadyDocumentIds(form.selectedDocuments);
   const primaryDocumentId = readyDocumentIds[0] ?? "parallelReview";
@@ -403,6 +430,18 @@ export default function Page() {
       contactAddress: current.contactAddress || current.companyAddress
     }));
     setStatus("已把公司預設資料套用到案件聯絡資訊。");
+  }
+
+  function saveCompanyDefaults() {
+    const companyDefaults = {
+      companyName: form.companyName,
+      companyContactPerson: form.companyContactPerson,
+      companyPhone: form.companyPhone,
+      companyAddress: form.companyAddress,
+      companyTaxId: form.companyTaxId
+    };
+    window.localStorage.setItem(COMPANY_DEFAULTS_STORAGE_KEY, JSON.stringify(companyDefaults));
+    setStatus("公司預設資料已儲存，下次打開會自動帶入。");
   }
 
   function clearDraft() {
@@ -600,7 +639,7 @@ export default function Page() {
               </div>
             </section>
 
-            {CASE_SECTIONS.map((section, index) => {
+            {MAIN_SECTIONS.map((section, index) => {
               const detailFields = section.detailFields ?? [];
               const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
               const totalCount = [...section.fields, ...detailFields].filter(([name]) => isFieldVisible(name, form)).length;
@@ -637,6 +676,21 @@ export default function Page() {
                 </section>
               );
             })}
+
+            <section className="section">
+              <div className="section-card is-tight">
+                <div className="section-header">
+                  <div>
+                    <div className="section-kicker">Meta</div>
+                    <h2>申請日期與匯出資訊</h2>
+                  </div>
+                </div>
+                <div className="compact-grid">
+                  {renderField("applicationDate", "申請日期", "date", form, updateField, "core")}
+                  <PreviewItem label="這次文件" value={buildSelectedDocumentSummary(form.selectedDocuments)} />
+                </div>
+              </div>
+            </section>
 
             <section className="section final-check">
               <div className="section-card is-tight">
@@ -715,6 +769,26 @@ export default function Page() {
                 </button>
                 <button className="danger" type="button" onClick={clearDraft}>
                   清空草稿
+                </button>
+              </div>
+            </section>
+
+            <section className="sidebar-card company-card">
+              <div className="sidebar-kicker">公司預設</div>
+              <h3>先存好，之後一鍵套用</h3>
+              <div className="compact-fields">
+                {renderField("companyName", "公司名稱", "text", form, updateField, "core")}
+                {renderField("companyContactPerson", "公司聯絡人", "text", form, updateField, "core")}
+                {renderField("companyPhone", "公司電話", "tel", form, updateField, "core")}
+                {renderField("companyAddress", "公司地址", "text", form, updateField, "core")}
+                {renderField("companyTaxId", "公司統編", "text", form, updateField, "core")}
+              </div>
+              <div className="actions compact-actions">
+                <button className="primary" type="button" onClick={saveCompanyDefaults}>
+                  儲存公司資料
+                </button>
+                <button className="secondary" type="button" onClick={applyCompanyDefaults}>
+                  套用到案件
                 </button>
               </div>
             </section>

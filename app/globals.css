@@ -313,6 +313,29 @@ h1 {
   gap: 14px;
 }
 
+.compact-grid,
+.compact-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-fields .field {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.compact-fields .field-rail {
+  display: none;
+}
+
+.compact-fields .field-frame {
+  padding: 14px;
+}
+
 .document-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -756,6 +779,15 @@ select:focus {
   border-radius: 24px;
 }
 
+.company-card {
+  display: grid;
+  gap: 14px;
+}
+
+.compact-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .summary-card {
   background:
     linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(255, 244, 248, 0.94));
@@ -876,6 +908,7 @@ select:focus {
   }
 
   .overview,
+  .compact-grid,
   .document-grid,
   .static-grid,
   .grid.cols-2,
@@ -912,6 +945,10 @@ select:focus {
   }
 
   .installation-choice-group {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-actions {
     grid-template-columns: 1fr;
   }
 }
