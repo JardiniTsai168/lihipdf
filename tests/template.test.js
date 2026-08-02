@@ -60,6 +60,28 @@ describe("document payload", () => {
     expect(payload.otherNotes).toContain("補充備註");
   });
 
+  it("keeps kw units visible for blank existing capacity fields", () => {
+    const payload = buildDocumentPayload({
+      ownerName: "吳威霖",
+      ownerPhone: "0988338787",
+      ownerAddress: "高雄市鼓山區明德路31號",
+      siteAddress: "高雄市大寮區光明路88號",
+      contactPerson: "黃昭華",
+      contactPhone: "07-7338588",
+      contactAddress: "高雄市鳥松區大同路2-58號",
+      installedExisting: "",
+      installedNew: "9",
+      installedTotal: "9",
+      saleExisting: "",
+      saleNew: "9",
+      saleTotal: "9",
+      estimatedParallelDate: "2026-12-31"
+    });
+
+    expect(payload.installedExisting).toBe("瓩");
+    expect(payload.saleExisting).toBe("瓩");
+  });
+
   it("keeps site address and applicant signature text in exported docx", async () => {
     const docxBuffer = await renderOfficialDocx({
       ownerName: "吳威霖",

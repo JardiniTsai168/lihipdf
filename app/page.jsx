@@ -160,9 +160,10 @@ function normalize(value) {
   return String(value ?? "").trim();
 }
 
-function formatKwValue(value) {
+function formatKwValue(value, { showUnitWhenEmpty = false } = {}) {
   const normalized = normalize(value);
-  return normalized ? `${normalized} 瓩` : "";
+  if (normalized) return `${normalized} 瓩`;
+  return showUnitWhenEmpty ? "瓩" : "";
 }
 
 function rocDateString(value) {
@@ -229,10 +230,10 @@ function buildDocumentPayload(formData) {
     windCategoryLine: installationCategoryLine("風力", formData.solarCategory),
     biomassCategoryLine: installationCategoryLine("生質能", formData.solarCategory),
     wasteCategoryLine: installationCategoryLine("廢棄物", formData.solarCategory),
-    installedExisting: formatKwValue(formData.installedExisting),
+    installedExisting: formatKwValue(formData.installedExisting, { showUnitWhenEmpty: true }),
     installedNew: formatKwValue(formData.installedNew),
     installedTotal: formatKwValue(formData.installedTotal),
-    saleExisting: formatKwValue(formData.saleExisting),
+    saleExisting: formatKwValue(formData.saleExisting, { showUnitWhenEmpty: true }),
     saleNew: formatKwValue(formData.saleNew),
     saleTotal: formatKwValue(formData.saleTotal),
     parallelMethod: formData.parallelMethod,
