@@ -75,6 +75,8 @@ describe("document payload", () => {
       saleExisting: "",
       saleNew: "9",
       saleTotal: "9",
+      boundaryVoltage: "單 相 3 線 110/220 伏",
+      parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31"
     });
 
@@ -95,6 +97,8 @@ describe("document payload", () => {
       installedTotal: "9",
       saleNew: "9",
       saleTotal: "9",
+      boundaryVoltage: "單 相 3 線 110/220 伏",
+      parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31"
     });
     const xml = new PizZip(docxBuffer).file("word/document.xml").asText();

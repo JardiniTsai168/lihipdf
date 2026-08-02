@@ -6,7 +6,7 @@ describe("case form schema", () => {
   it("provides a usable first-case default state", () => {
     expect(CASE_FORM_DEFAULTS.documentTitle).toBe("再生能源發電設備併聯審查申請表");
     expect(CASE_FORM_DEFAULTS.solarCategory).toBe("屋頂");
-    expect(CASE_FORM_DEFAULTS.boundaryVoltage).toBe("單 相 3 線 110/220 伏");
+    expect(CASE_FORM_DEFAULTS.boundaryVoltage).toBe("");
     expect(CASE_FORM_DEFAULTS.exportFormat).toBe("pdf");
     expect(CASE_FORM_DEFAULTS.caseNumber).toBe("");
     expect(CASE_FORM_DEFAULTS.installedExisting).toBe("");
@@ -36,6 +36,8 @@ describe("case form schema", () => {
       parallelMethod: "用戶內線",
       innerLineNumber: "IL-12",
       saleMode: "全額躉售",
+      boundaryVoltage: "單 相 3 線 110/220 伏",
+      parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31"
     });
 
@@ -70,6 +72,8 @@ describe("case form schema", () => {
       saleMode: "僅併聯不躉售",
       saleNew: "",
       saleTotal: "",
+      boundaryVoltage: "單 相 3 線 110/220 伏",
+      parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31"
     });
 
@@ -95,6 +99,8 @@ describe("case form schema", () => {
       innerLineNumber: "IL-12",
       contractType: "",
       contractCapacity: "",
+      boundaryVoltage: "單 相 3 線 110/220 伏",
+      parallelPointVoltage: "單 相 3 線 110/220 伏",
       estimatedParallelDate: "2026-12-31"
     });
 

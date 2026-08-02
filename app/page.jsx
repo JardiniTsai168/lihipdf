@@ -715,7 +715,7 @@ export default function Page() {
                         <strong>{filledCount} / {totalCount}</strong>
                       </div>
                     </div>
-                    <p className="section-description">{section.description}</p>
+                {section.description ? <p className="section-description">{section.description}</p> : null}
                     {section.title === "設備與容量" ? (
                       renderEquipmentCapacitySection(form, updateField)
                     ) : (

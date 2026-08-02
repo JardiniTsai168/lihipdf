@@ -47,7 +47,7 @@ export function createAppDraftDefaults() {
 export const CASE_SECTIONS = [
   {
     title: "案件與設置者資料",
-    description: "主流程先照你指定的順序走，先把案件代號、設置者與場址資訊排直。",
+    description: "",
     fields: [
       ["caseNumber", "編號", "text"],
       ["districtOffice", "區處", "text"],
@@ -89,6 +89,7 @@ export const CASE_SECTIONS = [
     title: "併聯與售電方式",
     description: "最後接併聯、售電、電壓、日期與補充說明，主流程就照你剛列的那串。",
     fields: [
+      ["applicationDate", "申請日期", "date"],
       ["parallelMethod", "預計併聯方式", "parallelMethod"],
       ["innerLineNumber", "電號", "text"],
       ["contractType", "契約種別", "text"],
@@ -111,11 +112,6 @@ export const CASE_SECTIONS = [
       ["companyAddress", "公司地址", "text"],
       ["companyTaxId", "公司統編", "text"]
     ]
-  },
-  {
-    title: "文件資訊",
-    description: "申請日期保留獨立放最後，匯出前再補最順手。",
-    fields: [["applicationDate", "申請日期", "date"]]
   }
 ];
 
@@ -124,18 +120,18 @@ export const FIELD_HINTS = {
   ownerName: "例：王小明",
   principalName: "例：王大明",
   ownerPhone: "例：0912-345-678",
-  ownerAddress: "例：高雄市鼓山區明德路31號",
-  siteAddress: "例：高雄市大寮區光明路88號",
+  ownerAddress: "例：高雄市鼓子區無尾熊路49號",
+  siteAddress: "例：高雄市鼓子區無尾熊路49號",
   contactPerson: "例：陳先生",
   contactPhone: "例：07-7338588",
-  contactAddress: "例：高雄市鳥松區大同路2-58號",
-  caseNumber: "內部案件編號",
+  contactAddress: "例：高雄市鼓子區無尾熊路49號",
+  caseNumber: "",
   districtOffice: "例：高雄區處",
   electricNumber: "例：12-34-5678-90-1",
-  installedExisting: "沒有可留白",
+  installedExisting: "",
   installedNew: "例：9",
   installedTotal: "例：9",
-  saleExisting: "沒有可留白",
+  saleExisting: "",
   saleNew: "例：9",
   saleTotal: "例：9",
   contractCapacity: "例：49.5",
@@ -151,7 +147,7 @@ export const FIELD_HINTS = {
   companyTaxId: "例：12345678",
   detailReviewDate: "勾選日期",
   externalDesignDate: "勾選日期",
-  otherNotes: "若有補充說明再填"
+  otherNotes: ""
 };
 
 export const FIELD_ARIA_LABELS = {
