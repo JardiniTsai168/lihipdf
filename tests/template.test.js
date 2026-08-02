@@ -44,7 +44,9 @@ describe("document payload", () => {
     expect(payload.districtOffice).toBe("高雄區處");
     expect(payload.electricNumber).toBe("12-34-5678-90-1");
     expect(payload.installedExisting).toBe("3 瓩");
-    expect(payload.saleExisting).toBe("3");
+    expect(payload.saleExisting).toBe("3 瓩");
+    expect(payload.saleNew).toBe("9 瓩");
+    expect(payload.saleTotal).toBe("9 瓩");
     expect(payload.parallelMethod).toBe("用戶內線");
     expect(payload.contractType).toBe("低壓電力");
     expect(payload.saleMode).toBe("轉供自用(第二、三型)");
@@ -79,5 +81,7 @@ describe("document payload", () => {
     expect(xml).toContain("高雄市大寮區光明路88號");
     expect(xml).toContain("申請人");
     expect(xml).toContain("簽章");
+    expect(xml).toMatch(/<w:tcW w:w="983" w:type="dxa"\/><w:gridSpan w:val="2"\/><w:vMerge w:val="restart"\/>[\s\S]*?申請人[\s\S]*?簽章/);
+    expect(xml).not.toMatch(/<w:tcW w:w="3828" w:type="dxa"\/><w:gridSpan w:val="5"\/><w:vMerge w:val="restart"\/>[\s\S]*?申請人[\s\S]*?簽章/);
   });
 });

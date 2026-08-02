@@ -106,9 +106,9 @@ export function buildDocumentPayload(data) {
     installedExisting: formatKwValue(formData.installedExisting),
     installedNew: formatKwValue(formData.installedNew),
     installedTotal: formatKwValue(formData.installedTotal),
-    saleExisting: normalize(formData.saleExisting),
-    saleNew: normalize(formData.saleNew),
-    saleTotal: normalize(formData.saleTotal),
+    saleExisting: formatKwValue(formData.saleExisting),
+    saleNew: formatKwValue(formData.saleNew),
+    saleTotal: formatKwValue(formData.saleTotal),
     parallelMethod: formData.parallelMethod,
     innerLineNumber: normalize(formData.innerLineNumber),
     contractType: normalize(formData.contractType),
@@ -219,7 +219,7 @@ function adjustSiteAddressRow(documentXml) {
 
 function adjustBoundaryVoltageSignatureCell(documentXml) {
   return documentXml.replace(
-    /(<w:tc><w:tcPr><w:tcW w:w="3828" w:type="dxa"\/><w:gridSpan w:val="5"\/><w:vMerge w:val="restart"\/>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)(<\/w:tc>)/,
+    /(<w:tc><w:tcPr><w:tcW w:w="983" w:type="dxa"\/><w:gridSpan w:val="2"\/><w:vMerge w:val="restart"\/>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)(<\/w:tc>)/,
     `$1${SIGNATURE_PARAGRAPH}$2`
   );
 }
