@@ -180,7 +180,7 @@ function renderField(name, label, type, form, updateField, variant = "core") {
   if (!isFieldVisible(name, form)) return null;
 
   const placeholder = FIELD_HINTS[name];
-  const hint = FIELD_HINTS[name];
+  const hint = placeholder?.startsWith("例：") ? "" : placeholder;
   const ariaLabel = FIELD_ARIA_LABELS[name] ?? label;
   const badgeLabel = variant === "detail" ? "補充" : "主要";
   const state = fieldState(name, form[name], form);
