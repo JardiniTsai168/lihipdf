@@ -677,11 +677,22 @@ function renderField(name, label, type, form, updateField, variant = "core") {
             value={form[name]}
             onChange={(event) => updateField(name, event.target.value)}
           />
+        ) : type === "number" ? (
+          <div className="input-with-unit">
+            <input
+              aria-label={ariaLabel}
+              type={type}
+              inputMode="decimal"
+              placeholder={placeholder}
+              value={form[name]}
+              onChange={(event) => updateField(name, event.target.value)}
+            />
+            <span className="input-unit" aria-hidden="true">瓩</span>
+          </div>
         ) : (
           <input
             aria-label={ariaLabel}
             type={type}
-            inputMode={type === "number" ? "decimal" : undefined}
             placeholder={placeholder}
             value={form[name]}
             onChange={(event) => updateField(name, event.target.value)}

@@ -481,6 +481,33 @@ select {
   font-size: 16px;
 }
 
+.input-with-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.input-with-unit input {
+  min-width: 0;
+}
+
+.input-unit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 textarea {
   min-height: 148px;
   resize: vertical;

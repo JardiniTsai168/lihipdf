@@ -45,4 +45,10 @@ describe("single-form MVP page", () => {
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "風力設置分類" })).getByRole("button", { name: /離岸/ }));
     expect(within(screen.getByRole("radiogroup", { name: "再生能源類別" })).getByRole("button", { name: /風力/ })).toHaveClass("is-active");
   });
+
+  it("shows kw unit boxes beside capacity inputs", () => {
+    render(<Page />);
+
+    expect(screen.getAllByText("瓩").length).toBeGreaterThanOrEqual(6);
+  });
 });
