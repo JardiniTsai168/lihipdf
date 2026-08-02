@@ -85,8 +85,6 @@ const REQUIRED_MESSAGES = {
   saleNew: "請填寫躉售容量_新增設_瓩",
   saleTotal: "請填寫躉售容量_合計_瓩",
   innerLineNumber: "併聯用戶內線時請填寫電號",
-  contractType: "併聯用戶內線時請填寫契約種別",
-  contractCapacity: "併聯用戶內線時請填寫契約容量",
   boundaryVoltage: "請填寫責任分界點電壓",
   parallelPointVoltage: "請填寫併聯點電壓",
   estimatedParallelDate: "請填寫預計併聯日期"
@@ -165,22 +163,6 @@ const caseFormSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["innerLineNumber"],
       message: REQUIRED_MESSAGES.innerLineNumber
-    });
-  }
-
-  if (data.parallelMethod === "用戶內線" && !data.contractType.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["contractType"],
-      message: REQUIRED_MESSAGES.contractType
-    });
-  }
-
-  if (data.parallelMethod === "用戶內線" && !data.contractCapacity.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["contractCapacity"],
-      message: REQUIRED_MESSAGES.contractCapacity
     });
   }
 

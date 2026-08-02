@@ -32,6 +32,11 @@ function normalize(value) {
   return String(value ?? "").trim();
 }
 
+function formatKwValue(value) {
+  const normalized = normalize(value);
+  return normalized ? `${normalized} 瓩` : "";
+}
+
 function rocDateString(value) {
   if (!value) return "";
   const [year, month, day] = value.split("-").map(Number);
@@ -98,9 +103,9 @@ export function buildDocumentPayload(data) {
     windCategoryLine: installationCategoryLine("風力", formData.solarCategory),
     biomassCategoryLine: installationCategoryLine("生質能", formData.solarCategory),
     wasteCategoryLine: installationCategoryLine("廢棄物", formData.solarCategory),
-    installedExisting: normalize(formData.installedExisting),
-    installedNew: normalize(formData.installedNew),
-    installedTotal: normalize(formData.installedTotal),
+    installedExisting: formatKwValue(formData.installedExisting),
+    installedNew: formatKwValue(formData.installedNew),
+    installedTotal: formatKwValue(formData.installedTotal),
     saleExisting: normalize(formData.saleExisting),
     saleNew: normalize(formData.saleNew),
     saleTotal: normalize(formData.saleTotal),
@@ -147,6 +152,10 @@ const CONTACT_PERSON_CELL_PATTERN =
   /<w:tc\b(?:(?!<\/w:tc>)[\s\S])*?\{\{contactPerson\}\}(?:(?!<\/w:tc>)[\s\S])*?<\/w:tc>/g;
 const CONTACT_PERSON_SPACING =
   '<w:spacing w:before="180" w:after="0" w:line="240" w:lineRule="exact"/>';
+const DEFAULT_VALUE_PARAGRAPH = (fieldName) =>
+  `<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="標楷體" w:hAnsi="標楷體"/></w:rPr><w:t>{{${fieldName}}}</w:t></w:r></w:p>`;
+const SIGNATURE_PARAGRAPH =
+  '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="280" w:lineRule="exact"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="標楷體" w:eastAsia="標楷體" w:hAnsi="標楷體"/></w:rPr><w:t>申請人</w:t></w:r><w:r><w:br/><w:t>簽章</w:t></w:r></w:p>';
 
 function adjustContactPersonCell(cellXml) {
   let next = cellXml;
@@ -194,9 +203,34 @@ function adjustContactPersonRows(documentXml) {
   });
 }
 
+function adjustSiteAddressRow(documentXml) {
+  return documentXml.replace(/<w:tr\b[\s\S]*?\{\{siteAddress\}\}[\s\S]*?<\/w:tr>/, (rowXml) => {
+    const withLabel = rowXml.replace(
+      /<w:t>\{\{siteAddress\}\}<\/w:t>/,
+      "<w:t>設置場所或地點（註3）</w:t>"
+    );
+
+    return withLabel.replace(
+      /(<w:t>設置場所或地點（註3）<\/w:t>[\s\S]*?<\/w:tc><w:tc\b[\s\S]*?<w:tcPr>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)/,
+      `$1${DEFAULT_VALUE_PARAGRAPH("siteAddress")}`
+    );
+  });
+}
+
+function adjustBoundaryVoltageSignatureCell(documentXml) {
+  return documentXml.replace(
+    /(<w:tc><w:tcPr><w:tcW w:w="3828" w:type="dxa"\/><w:gridSpan w:val="5"\/><w:vMerge w:val="restart"\/>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)(<\/w:tc>)/,
+    `$1${SIGNATURE_PARAGRAPH}$2`
+  );
+}
+
 function applyTemplateLayoutFixes(documentXml) {
-  return adjustContactPersonRows(
-    documentXml.replace(CONTACT_PERSON_CELL_PATTERN, adjustContactPersonCell)
+  return adjustBoundaryVoltageSignatureCell(
+    adjustSiteAddressRow(
+      adjustContactPersonRows(
+        documentXml.replace(CONTACT_PERSON_CELL_PATTERN, adjustContactPersonCell)
+      )
+    )
   );
 }
 

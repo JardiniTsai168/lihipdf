@@ -1,6 +1,7 @@
+import PizZip from "pizzip";
 import { describe, expect, it } from "vitest";
 
-import { buildDocumentPayload } from "../app/lib/template";
+import { buildDocumentPayload, renderOfficialDocx } from "../app/lib/template";
 
 describe("document payload", () => {
   it("maps case form data into official template fields", () => {
@@ -42,7 +43,7 @@ describe("document payload", () => {
     expect(payload.caseNumber).toBe("A-001");
     expect(payload.districtOffice).toBe("高雄區處");
     expect(payload.electricNumber).toBe("12-34-5678-90-1");
-    expect(payload.installedExisting).toBe("3");
+    expect(payload.installedExisting).toBe("3 瓩");
     expect(payload.saleExisting).toBe("3");
     expect(payload.parallelMethod).toBe("用戶內線");
     expect(payload.contractType).toBe("低壓電力");
@@ -55,5 +56,28 @@ describe("document payload", () => {
     expect(payload.otherNotes).toContain("細部協商");
     expect(payload.otherNotes).toContain("外線設計");
     expect(payload.otherNotes).toContain("補充備註");
+  });
+
+  it("keeps site address and applicant signature text in exported docx", async () => {
+    const docxBuffer = await renderOfficialDocx({
+      ownerName: "吳威霖",
+      ownerPhone: "0988338787",
+      ownerAddress: "高雄市鼓山區明德路31號",
+      siteAddress: "高雄市大寮區光明路88號",
+      contactPerson: "黃昭華",
+      contactPhone: "07-7338588",
+      contactAddress: "高雄市鳥松區大同路2-58號",
+      installedNew: "9",
+      installedTotal: "9",
+      saleNew: "9",
+      saleTotal: "9",
+      estimatedParallelDate: "2026-12-31"
+    });
+    const xml = new PizZip(docxBuffer).file("word/document.xml").asText();
+
+    expect(xml).toContain("設置場所或地點（註3）");
+    expect(xml).toContain("高雄市大寮區光明路88號");
+    expect(xml).toContain("申請人");
+    expect(xml).toContain("簽章");
   });
 });

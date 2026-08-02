@@ -35,8 +35,6 @@ describe("case form schema", () => {
       saleTotal: "9",
       parallelMethod: "用戶內線",
       innerLineNumber: "IL-12",
-      contractType: "低壓電力",
-      contractCapacity: "49.5",
       saleMode: "全額躉售",
       estimatedParallelDate: "2026-12-31"
     });
@@ -77,5 +75,31 @@ describe("case form schema", () => {
 
     expect(result.saleMode).toBe("僅併聯不躉售");
     expect(result.saleNew).toBe("");
+  });
+
+  it("only requires 電號 when parallel method is 用戶內線", () => {
+    const result = parseCaseForm({
+      ...CASE_FORM_DEFAULTS,
+      ownerName: "王小明",
+      ownerPhone: "0912345678",
+      ownerAddress: "高雄市鼓山區明德路31號",
+      siteAddress: "高雄市鼓山區明德路31號",
+      contactPerson: "黃昭華",
+      contactPhone: "07-7338588",
+      contactAddress: "高雄市鳥松區大同路2-58號",
+      installedNew: "9",
+      installedTotal: "9",
+      saleNew: "9",
+      saleTotal: "9",
+      parallelMethod: "用戶內線",
+      innerLineNumber: "IL-12",
+      contractType: "",
+      contractCapacity: "",
+      estimatedParallelDate: "2026-12-31"
+    });
+
+    expect(result.parallelMethod).toBe("用戶內線");
+    expect(result.contractType).toBe("");
+    expect(result.contractCapacity).toBe("");
   });
 });
