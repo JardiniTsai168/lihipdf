@@ -2,459 +2,26 @@
 
 import React from "react";
 import { useEffect, useState } from "react";
-import PizZip from "pizzip";
 
 import {
   ADVANCED_OPTION_CHOICES,
-  CASE_FORM_DEFAULTS,
   DEVICE_TYPE_OPTIONS,
   ENERGY_CATEGORY_OPTIONS,
   INSTALLATION_CATEGORY_GROUPS,
   validateCaseForm
 } from "./lib/schema";
-
-const STORAGE_KEY = "lihipdf_single_form_v2";
-
-const sections = [
-  {
-    title: "案件與設置者資料",
-    description: "主流程先照你指定的順序走，先把案件代號、設置者與場址資訊排直。",
-    fields: [
-      ["caseNumber", "編號", "text"],
-      ["districtOffice", "區處", "text"],
-      ["ownerName", "設置者名稱", "text"],
-      ["principalName", "負責人", "text"],
-      ["electricNumber", "電號", "text"],
-      ["ownerAddress", "通訊處", "text"],
-      ["ownerPhone", "連絡電話", "tel"],
-      ["siteAddress", "設置場所或地點（註3）", "text"]
-    ]
-  },
-  {
-    title: "聯絡窗口",
-    description: "聯絡人維持 Word 的三連欄順序，不再插其他欄位進來。",
-    fields: [
-      ["contactPerson", "連絡人", "text"],
-      ["contactAddress", "通訊處", "text"],
-      ["contactPhone", "連絡電話", "tel"]
-    ]
-  },
-  {
-    title: "設備與容量",
-    description: "設備型別、能源類別與設置分類都改成可選，容量欄位接著往下填。",
-    fields: [
-      ["deviceType", "再生能源發電設備型別", "deviceType"],
-      ["energyCategory", "再生能源類別", "energyCategory"],
-      ["solarCategory", "設置分類", "installationCategory"],
-      ["installedNew", "裝置容量新（增）設（瓩）", "number"],
-      ["installedTotal", "裝置容量合計（瓩）", "number"],
-      ["saleNew", "躉售容量新（增）設（瓩）", "number"],
-      ["saleTotal", "躉售容量合計（瓩）", "number"]
-    ],
-    detailFields: [
-      ["installedExisting", "裝置容量既設（瓩）", "number"],
-      ["saleExisting", "躉售容量既設（瓩）", "number"]
-    ]
-  },
-  {
-    title: "併聯與售電方式",
-    description: "最後接併聯、售電、電壓、日期與補充說明，主流程就照你剛列的那串。",
-    fields: [
-      ["parallelMethod", "預計併聯方式", "parallelMethod"],
-      ["innerLineNumber", "電號", "text"],
-      ["contractType", "契約種別", "text"],
-      ["contractCapacity", "契約容量", "text"],
-      ["saleMode", "售電方式", "saleMode"],
-      ["boundaryVoltage", "責任分界點電壓", "text"],
-      ["parallelPointVoltage", "併聯點電壓", "text"],
-      ["estimatedParallelDate", "預計併聯日期", "date"],
-      ["relatedCaseNumber", "與本案相關案件編號", "text"],
-      ["otherNotes", "其他事項", "otherNotes"]
-    ]
-  },
-  {
-    title: "公司預設資料",
-    description: "這區不進主流程，只留給快速套用聯絡資訊。",
-    fields: [
-      ["companyName", "公司名稱", "text"],
-      ["companyContactPerson", "公司聯絡人", "text"],
-      ["companyPhone", "公司電話", "tel"],
-      ["companyAddress", "公司地址", "text"],
-      ["companyTaxId", "公司統編", "text"]
-    ]
-  },
-  {
-    title: "文件資訊",
-    description: "申請日期保留獨立放最後，匯出前再補最順手。",
-    fields: [
-      ["applicationDate", "申請日期", "date"]
-    ]
-  }
-];
-
-const FIELD_HINTS = {
-  applicationDate: "例：2026-08-01",
-  ownerName: "例：王小明",
-  principalName: "例：王大明",
-  ownerPhone: "例：0912-345-678",
-  ownerAddress: "例：高雄市鼓山區明德路31號",
-  siteAddress: "例：高雄市大寮區光明路88號",
-  contactPerson: "例：陳先生",
-  contactPhone: "例：07-7338588",
-  contactAddress: "例：高雄市鳥松區大同路2-58號",
-  caseNumber: "內部案件編號",
-  districtOffice: "例：高雄區處",
-  electricNumber: "例：12-34-5678-90-1",
-  installedExisting: "沒有可留白",
-  installedNew: "例：9",
-  installedTotal: "例：9",
-  saleExisting: "沒有可留白",
-  saleNew: "例：9",
-  saleTotal: "例：9",
-  contractCapacity: "例：49.5",
-  parallelMethod: "選擇併聯台電外線或併聯用戶內線",
-  saleMode: "依申請案型選一種售電方式",
-  innerLineNumber: "併聯用戶內線時填寫",
-  contractType: "例：低壓電力",
-  estimatedParallelDate: "例：2026-12-31",
-  companyName: "例：某某能源股份有限公司",
-  companyContactPerson: "例：鄒侑廷",
-  companyPhone: "例：0939-255-192",
-  companyAddress: "例：高雄市前鎮區成功路88號",
-  companyTaxId: "例：12345678",
-  detailReviewDate: "勾選日期",
-  externalDesignDate: "勾選日期",
-  otherNotes: "若有補充說明再填"
-};
-
-const FIELD_ARIA_LABELS = {
-  siteAddress: "設置場所或地點",
-  contactAddress: "連絡人通訊處",
-  contactPhone: "連絡人電話",
-  installedNew: "裝置容量_新增設_瓩",
-  installedTotal: "裝置容量_合計_瓩",
-  saleNew: "躉售容量_新增設_瓩",
-  saleTotal: "躉售容量_合計_瓩",
-  contractCapacity: "契約容量_瓩"
-};
-
-function loadDraft() {
-  if (typeof window === "undefined") return CASE_FORM_DEFAULTS;
-
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return CASE_FORM_DEFAULTS;
-
-  try {
-    return { ...CASE_FORM_DEFAULTS, ...JSON.parse(raw) };
-  } catch {
-    return CASE_FORM_DEFAULTS;
-  }
-}
-
-function summarizeIssues(result) {
-  if (result.success) return [];
-  return [...new Set(result.error.issues.map((issue) => issue.message))];
-}
-
-function normalize(value) {
-  return String(value ?? "").trim();
-}
-
-function formatKwValue(value, { showUnitWhenEmpty = false } = {}) {
-  const normalized = normalize(value);
-  if (normalized) return `${normalized} 瓩`;
-  return showUnitWhenEmpty ? "瓩" : "";
-}
-
-function rocDateString(value) {
-  if (!value) return "";
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return "";
-  return `${year - 1911} 年 ${month} 月 ${day} 日`;
-}
-
-function solarCategoryLine(value) {
-  const selected = normalize(value);
-  const options = ["屋頂", "地面", "水面"];
-  return options
-    .map((option) => (option === selected ? `■${option}` : `□${option}`))
-    .join("  ");
-}
-
-function checkboxLine(selected, value, label) {
-  return `${selected === value ? "■" : "□"}${label}`;
-}
-
-function deviceTypeLine(value) {
-  return DEVICE_TYPE_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
-}
-
-function energyCategoryLine(value) {
-  return ENERGY_CATEGORY_OPTIONS.map((option) => checkboxLine(value, option, option)).join("  ");
-}
-
-function installationCategoryLine(category, selected) {
-  const options = INSTALLATION_CATEGORY_GROUPS[category] ?? [];
-  return options.map((option) => checkboxLine(selected, option, option)).join("  ");
-}
-
-function otherNotesBlock(formData) {
-  const lines = [];
-  const detailReviewLine = `配電級再生能源${checkboxLine(formData.detailReview, "需", "需")}${checkboxLine(formData.detailReview, "不需", "不需")} 台電公司於核發審查意見書後即進行細部協商。(註12)勾選日期：${normalize(formData.detailReviewDate)}`;
-  const externalDesignLine = `配電級再生能源${checkboxLine(formData.externalDesign, "需", "需")}${checkboxLine(formData.externalDesign, "不需", "不需")} 台電公司於核發審查意見書後即進行外線設計。(註13)勾選日期：${normalize(formData.externalDesignDate)}`;
-
-  lines.push(detailReviewLine, externalDesignLine);
-
-  const notes = normalize(formData.otherNotes).replace(/\r/g, "\n");
-  if (notes) lines.push(notes);
-
-  return lines.join("\n");
-}
-
-function buildDocumentPayload(formData) {
-  return {
-    caseNumber: normalize(formData.caseNumber),
-    districtOffice: normalize(formData.districtOffice),
-    ownerName: normalize(formData.ownerName),
-    principalName: normalize(formData.principalName),
-    electricNumber: normalize(formData.electricNumber),
-    ownerAddress: normalize(formData.ownerAddress),
-    ownerPhone: normalize(formData.ownerPhone),
-    siteAddress: normalize(formData.siteAddress),
-    contactPerson: normalize(formData.contactPerson),
-    contactAddress: normalize(formData.contactAddress),
-    contactPhone: normalize(formData.contactPhone),
-    deviceTypeLine: deviceTypeLine(formData.deviceType),
-    energyCategoryLine: energyCategoryLine(formData.energyCategory),
-    solarCategoryLine: solarCategoryLine(formData.solarCategory),
-    windCategoryLine: installationCategoryLine("風力", formData.solarCategory),
-    biomassCategoryLine: installationCategoryLine("生質能", formData.solarCategory),
-    wasteCategoryLine: installationCategoryLine("廢棄物", formData.solarCategory),
-    installedExisting: formatKwValue(formData.installedExisting, { showUnitWhenEmpty: true }),
-    installedNew: formatKwValue(formData.installedNew),
-    installedTotal: formatKwValue(formData.installedTotal),
-    saleExisting: formatKwValue(formData.saleExisting, { showUnitWhenEmpty: true }),
-    saleNew: formatKwValue(formData.saleNew),
-    saleTotal: formatKwValue(formData.saleTotal),
-    parallelMethod: formData.parallelMethod,
-    innerLineNumber: normalize(formData.innerLineNumber),
-    contractType: normalize(formData.contractType),
-    contractCapacity: normalize(formData.contractCapacity),
-    saleMode: formData.saleMode,
-    boundaryVoltage: normalize(formData.boundaryVoltage),
-    parallelPointVoltage: normalize(formData.parallelPointVoltage),
-    estimatedParallelDateRoc: rocDateString(formData.estimatedParallelDate),
-    relatedCaseNumber: normalize(formData.relatedCaseNumber),
-    otherNotes: otherNotesBlock(formData),
-    applicationDateRoc: rocDateString(formData.applicationDate)
-  };
-}
-
-function escapeXml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function xmlValue(value) {
-  const normalized = String(value ?? "");
-  if (!normalized) return "";
-  return normalized
-    .split("\n")
-    .map((line) => escapeXml(line))
-    .join("</w:t><w:br/><w:t>");
-}
-
-const CONTACT_PERSON_CELL_PATTERN =
-  /<w:tc\b(?:(?!<\/w:tc>)[\s\S])*?\{\{contactPerson\}\}(?:(?!<\/w:tc>)[\s\S])*?<\/w:tc>/g;
-const CONTACT_PERSON_SPACING =
-  '<w:spacing w:before="180" w:after="0" w:line="240" w:lineRule="exact"/>';
-const DEFAULT_VALUE_PARAGRAPH = (fieldName) =>
-  `<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="標楷體" w:hAnsi="標楷體"/></w:rPr><w:t>{{${fieldName}}}</w:t></w:r></w:p>`;
-const SIGNATURE_PARAGRAPH =
-  '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="280" w:lineRule="exact"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="標楷體" w:eastAsia="標楷體" w:hAnsi="標楷體"/></w:rPr><w:t>申請人</w:t></w:r><w:r><w:br/><w:t>簽章</w:t></w:r></w:p>';
-
-function adjustContactPersonCell(cellXml) {
-  let next = cellXml;
-
-  if (next.includes("<w:tcMar>")) {
-    next = next
-      .replace(/<w:top w:w="\d+" w:type="dxa"\/>/, '<w:top w:w="120" w:type="dxa"/>')
-      .replace(/<w:bottom w:w="\d+" w:type="dxa"\/>/, '<w:bottom w:w="120" w:type="dxa"/>');
-  } else {
-    next = next.replace(
-      "</w:tcPr>",
-      '<w:tcMar><w:top w:w="120" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tcMar></w:tcPr>'
-    );
-  }
-
-  if (next.includes("<w:pPr>")) {
-    if (/<w:spacing\b[^>]*\/>/.test(next)) {
-      next = next.replace(/<w:spacing\b[^>]*\/>/, CONTACT_PERSON_SPACING);
-    } else {
-      next = next.replace("<w:pPr>", `<w:pPr>${CONTACT_PERSON_SPACING}`);
-    }
-  } else {
-    next = next.replace("<w:p>", `<w:p><w:pPr>${CONTACT_PERSON_SPACING}</w:pPr>`);
-  }
-
-  if (!next.includes('<w:vAlign w:val="center"/>')) {
-    next = next.replace("</w:tcPr>", '<w:vAlign w:val="center"/></w:tcPr>');
-  }
-
-  return next;
-}
-
-function adjustContactPersonRows(documentXml) {
-  return documentXml.replace(/<w:tr\b[\s\S]*?<\/w:tr>/g, (rowXml) => {
-    const isContactRow =
-      rowXml.includes("{{contactPerson}}") ||
-      (rowXml.includes("<w:vMerge/>") && rowXml.includes("連絡電話"));
-
-    if (!isContactRow) return rowXml;
-
-    return rowXml.replace(
-      /<w:trHeight w:val="(\d+)"\/>/g,
-      '<w:trHeight w:val="$1" w:hRule="exact"/>'
-    );
-  });
-}
-
-function adjustSiteAddressRow(documentXml) {
-  return documentXml.replace(/<w:tr\b[\s\S]*?\{\{siteAddress\}\}[\s\S]*?<\/w:tr>/, (rowXml) => {
-    const withLabel = rowXml.replace(
-      /<w:t>\{\{siteAddress\}\}<\/w:t>/,
-      "<w:t>設置場所或地點（註3）</w:t>"
-    );
-
-    return withLabel.replace(
-      /(<w:t>設置場所或地點（註3）<\/w:t>[\s\S]*?<\/w:tc><w:tc\b[\s\S]*?<w:tcPr>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)/,
-      `$1${DEFAULT_VALUE_PARAGRAPH("siteAddress")}`
-    );
-  });
-}
-
-function adjustBoundaryVoltageSignatureCell(documentXml) {
-  return documentXml.replace(
-    /(<w:tc><w:tcPr><w:tcW w:w="983" w:type="dxa"\/><w:gridSpan w:val="2"\/><w:vMerge w:val="restart"\/>[\s\S]*?<\/w:tcPr>)(?:<w:p\b[\s\S]*?<\/w:p>)(<\/w:tc>)/,
-    `$1${SIGNATURE_PARAGRAPH}$2`
-  );
-}
-
-function applyTemplateLayoutFixes(documentXml) {
-  return adjustBoundaryVoltageSignatureCell(
-    adjustSiteAddressRow(
-      adjustContactPersonRows(
-        documentXml.replace(CONTACT_PERSON_CELL_PATTERN, adjustContactPersonCell)
-      )
-    )
-  );
-}
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function applyTemplateSelectionState(documentXml, payload) {
-  const replacements = [
-    [
-      /[■□]第一型  [■□]第二型  [■□]第三型/g,
-      payload.deviceTypeLine
-    ],
-    [
-      /[■□]太陽光電  [■□]小水力  [■□]生質能  [■□]風力  [■□]地熱能  [■□]廢棄物  [■□]氫能  [■□]燃料電池  [■□]海洋能/g,
-      payload.energyCategoryLine
-    ],
-    [
-      /太陽光電-[■□]屋頂  [■□]地面  [■□]水面/g,
-      `太陽光電-${payload.solarCategoryLine}`
-    ],
-    [
-      /風力-[■□]陸域  [■□]離岸/g,
-      `風力-${payload.windCategoryLine}`
-    ],
-    [
-      /生質能-[■□]無  [■□]有厭氧消化設備  [■□]農林植物/g,
-      `生質能-${payload.biomassCategoryLine}`
-    ],
-    [
-      /廢棄物-[■□]一般  [■□]農業/g,
-      `廢棄物-${payload.wasteCategoryLine}`
-    ],
-    [
-      /[■□]併聯台電外線/g,
-      checkboxLine(payload.parallelMethod, "台電外線", "併聯台電外線")
-    ],
-    [
-      new RegExp(`[■□]併聯用戶內線，電號：${escapeRegex(payload.innerLineNumber)}`, "g"),
-      checkboxLine(payload.parallelMethod, "用戶內線", `併聯用戶內線，電號：${payload.innerLineNumber}`)
-    ],
-    [
-      /[■□]僅併聯不躉售/g,
-      checkboxLine(payload.saleMode, "僅併聯不躉售", "僅併聯不躉售")
-    ],
-    [
-      /[■□]全額躉售/g,
-      checkboxLine(payload.saleMode, "全額躉售", "全額躉售")
-    ],
-    [
-      /[■□]自發自用\(餘電躉售\)/g,
-      checkboxLine(payload.saleMode, "自發自用(餘電躉售)", "自發自用(餘電躉售)")
-    ],
-    [
-      /[■□]直供餘電躉售\(限第一型\)/g,
-      checkboxLine(payload.saleMode, "直供餘電躉售(限第一型)", "直供餘電躉售(限第一型)")
-    ],
-    [
-      /[■□]轉供餘電躉售/g,
-      checkboxLine(payload.saleMode, "轉供餘電躉售", "轉供餘電躉售")
-    ],
-    [
-      /[■□]轉供自用\(第二、三型\)/g,
-      checkboxLine(payload.saleMode, "轉供自用(第二、三型)", "轉供自用(第二、三型)")
-    ]
-  ];
-
-  return replacements.reduce(
-    (xml, [pattern, replacement]) => xml.replace(pattern, replacement),
-    documentXml
-  );
-}
-
-async function renderDocxBuffer(formData) {
-  const templateUrl = new URL("official-template-fillable.docx", document.baseURI);
-  const response = await fetch(templateUrl);
-  if (!response.ok) {
-    throw new Error(`template fetch failed: ${response.status}`);
-  }
-  const templateBytes = await response.arrayBuffer();
-  const zip = new PizZip(templateBytes);
-  let documentXml = zip.file("word/document.xml").asText();
-  const payload = buildDocumentPayload(formData);
-
-  documentXml = applyTemplateLayoutFixes(documentXml);
-
-  for (const [key, value] of Object.entries(payload)) {
-    documentXml = documentXml.replaceAll(`{{${key}}}`, xmlValue(value));
-  }
-
-  documentXml = applyTemplateSelectionState(documentXml, payload);
-
-  zip.file("word/document.xml", documentXml);
-  return zip.generate({ type: "uint8array" });
-}
-
-function PreviewItem({ label, value }) {
-  return (
-    <div className="preview-item">
-      <span>{label}</span>
-      <strong>{value || "未填"}</strong>
-    </div>
-  );
-}
+import {
+  CASE_SECTIONS,
+  createAppDraftDefaults,
+  DOCUMENT_OPTIONS,
+  FIELD_ARIA_LABELS,
+  FIELD_HINTS,
+  PARALLEL_METHOD_OPTIONS,
+  SALE_MODE_OPTIONS,
+  STORAGE_KEY
+} from "./lib/form-config";
+import { DOCUMENT_REGISTRY, getReadyDocumentIds, getSelectedDocumentIds } from "./lib/documents";
+import { exportDocument } from "./lib/export-pipeline";
 
 const BASE_REQUIRED_FIELDS = new Set([
   "ownerName",
@@ -471,12 +38,61 @@ const BASE_REQUIRED_FIELDS = new Set([
   "estimatedParallelDate"
 ]);
 
+function PreviewItem({ label, value }) {
+  return (
+    <div className="preview-item">
+      <span>{label}</span>
+      <strong>{value || "未填"}</strong>
+    </div>
+  );
+}
+
+function normalize(value) {
+  return String(value ?? "").trim();
+}
+
+function loadDraft() {
+  const fallback = createAppDraftDefaults();
+  if (typeof window === "undefined") return fallback;
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return fallback;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      ...fallback,
+      ...parsed,
+      selectedDocuments: {
+        ...fallback.selectedDocuments,
+        ...(parsed.selectedDocuments ?? {})
+      }
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function persistDraft(form) {
+  const { selectedDocuments, ...caseData } = form;
+  window.localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      ...caseData,
+      selectedDocuments
+    })
+  );
+}
+
+function summarizeIssues(result) {
+  if (result.success) return [];
+  return [...new Set(result.error.issues.map((issue) => issue.message))];
+}
+
 function isFieldRequired(name, formData) {
   if (BASE_REQUIRED_FIELDS.has(name)) return true;
   if ((name === "saleNew" || name === "saleTotal") && formData.saleMode !== "僅併聯不躉售") return true;
-  if (name === "innerLineNumber" && formData.parallelMethod === "用戶內線") {
-    return true;
-  }
+  if (name === "innerLineNumber" && formData.parallelMethod === "用戶內線") return true;
   if (name === "solarCategory" && INSTALLATION_CATEGORY_GROUPS[formData.energyCategory]) return true;
   return false;
 }
@@ -491,25 +107,6 @@ function isFieldVisible(name, formData) {
   return true;
 }
 
-function buildSectionSnapshot(formData) {
-  return [
-    {
-      title: "固定設備型別",
-      value: "第三型 / 太陽光電"
-    },
-    {
-      title: "預設聯絡窗口",
-      value: normalize(formData.companyContactPerson) && normalize(formData.companyPhone)
-        ? `${formData.companyContactPerson} / ${formData.companyPhone}`
-        : "先填公司聯絡人 / 電話"
-    },
-    {
-      title: "目前案件",
-      value: normalize(formData.ownerName) || "先填設置者名稱"
-    }
-  ];
-}
-
 function countFilledFields(formData, fields) {
   return fields.reduce((total, [name]) => {
     if (!isFieldVisible(name, formData)) return total;
@@ -520,6 +117,36 @@ function countFilledFields(formData, fields) {
 function fieldState(name, value, formData) {
   if (!isFieldRequired(name, formData)) return normalize(value) ? "filled" : "optional";
   return normalize(value) ? "filled" : "missing";
+}
+
+function buildOverviewCards(formData, attachments) {
+  return [
+    {
+      title: "固定設備型別",
+      value: "第三型 / 太陽光電"
+    },
+    {
+      title: "文件選擇",
+      value:
+        getSelectedDocumentIds(formData.selectedDocuments)
+          .map((id) => DOCUMENT_REGISTRY[id]?.shortTitle)
+          .filter(Boolean)
+          .join(" / ") || "先勾這次要輸出的文件"
+    },
+    {
+      title: "附件狀態",
+      value: attachments.length > 0 ? `已加入 ${attachments.length} 份附件` : "附件骨架已就位"
+    }
+  ];
+}
+
+function buildSelectedDocumentSummary(selectedDocuments) {
+  const selectedIds = getSelectedDocumentIds(selectedDocuments);
+  if (selectedIds.length === 0) return "尚未選擇";
+  return selectedIds
+    .map((id) => DOCUMENT_REGISTRY[id]?.shortTitle)
+    .filter(Boolean)
+    .join("、");
 }
 
 function renderField(name, label, type, form, updateField, variant = "core") {
@@ -534,15 +161,8 @@ function renderField(name, label, type, form, updateField, variant = "core") {
   const optionMap = {
     deviceType: DEVICE_TYPE_OPTIONS,
     energyCategory: ENERGY_CATEGORY_OPTIONS,
-    parallelMethod: ["台電外線", "用戶內線"],
-    saleMode: [
-      "僅併聯不躉售",
-      "全額躉售",
-      "自發自用(餘電躉售)",
-      "直供餘電躉售(限第一型)",
-      "轉供餘電躉售",
-      "轉供自用(第二、三型)"
-    ]
+    parallelMethod: PARALLEL_METHOD_OPTIONS,
+    saleMode: SALE_MODE_OPTIONS
   };
 
   return (
@@ -670,19 +290,11 @@ function renderField(name, label, type, form, updateField, variant = "core") {
               </button>
             ))}
           </div>
-        ) : type === "textarea" ? (
-          <textarea
-            aria-label={ariaLabel}
-            rows={5}
-            placeholder={placeholder}
-            value={form[name]}
-            onChange={(event) => updateField(name, event.target.value)}
-          />
         ) : type === "number" ? (
           <div className="input-with-unit">
             <input
               aria-label={ariaLabel}
-              type={type}
+              type="number"
               inputMode="decimal"
               placeholder={placeholder}
               value={form[name]}
@@ -705,7 +317,8 @@ function renderField(name, label, type, form, updateField, variant = "core") {
 }
 
 export default function Page() {
-  const [form, setForm] = useState(CASE_FORM_DEFAULTS);
+  const [form, setForm] = useState(createAppDraftDefaults());
+  const [attachments, setAttachments] = useState([]);
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -717,32 +330,45 @@ export default function Page() {
 
   useEffect(() => {
     if (!mounted) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+    persistDraft(form);
   }, [form, mounted]);
+
+  useEffect(() => {
+    return () => {
+      attachments.forEach((attachment) => {
+        if (attachment.previewUrl) {
+          window.URL.revokeObjectURL(attachment.previewUrl);
+        }
+      });
+    };
+  }, [attachments]);
 
   const validation = validateCaseForm(form);
   const issues = summarizeIssues(validation);
-  const totalFields = sections.reduce((sum, section) => {
+  const totalFields = CASE_SECTIONS.reduce((sum, section) => {
     const visibleFields = [...section.fields, ...(section.detailFields ?? [])].filter(([name]) =>
       isFieldVisible(name, form)
     );
     return sum + visibleFields.length;
   }, 0);
-  const filledFields = sections.reduce(
-    (sum, section) =>
-      sum + countFilledFields(form, [...section.fields, ...(section.detailFields ?? [])]),
+  const filledFields = CASE_SECTIONS.reduce(
+    (sum, section) => sum + countFilledFields(form, [...section.fields, ...(section.detailFields ?? [])]),
     0
   );
   const completionRate = Math.round((filledFields / totalFields) * 100);
-  const sectionSnapshot = buildSectionSnapshot(form);
-  const missingRequired = sections
+  const overviewCards = buildOverviewCards(form, attachments);
+  const missingRequired = CASE_SECTIONS
     .flatMap((section) => [...section.fields, ...(section.detailFields ?? [])].map(([name]) => name))
     .filter((name, index, names) => names.indexOf(name) === index)
     .filter((name) => isFieldVisible(name, form))
     .filter((name) => isFieldRequired(name, form) && !normalize(form[name]));
   const topMissing = missingRequired
     .slice(0, 5)
-    .map((name) => sections.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
+    .map((name) => CASE_SECTIONS.flatMap((section) => [...section.fields, ...(section.detailFields ?? [])]).find(([fieldName]) => fieldName === name)?.[1] ?? name);
+  const selectedDocumentIds = getSelectedDocumentIds(form.selectedDocuments);
+  const readyDocumentIds = getReadyDocumentIds(form.selectedDocuments);
+  const primaryDocumentId = readyDocumentIds[0] ?? "parallelReview";
+  const primaryDocument = DOCUMENT_REGISTRY[primaryDocumentId];
 
   function updateField(name, value) {
     setForm((current) => {
@@ -759,6 +385,16 @@ export default function Page() {
     });
   }
 
+  function updateDocumentSelection(documentId, enabled) {
+    setForm((current) => ({
+      ...current,
+      selectedDocuments: {
+        ...current.selectedDocuments,
+        [documentId]: enabled
+      }
+    }));
+  }
+
   function applyCompanyDefaults() {
     setForm((current) => ({
       ...current,
@@ -770,35 +406,88 @@ export default function Page() {
   }
 
   function clearDraft() {
-    setForm(CASE_FORM_DEFAULTS);
+    attachments.forEach((attachment) => {
+      if (attachment.previewUrl) window.URL.revokeObjectURL(attachment.previewUrl);
+    });
+    setAttachments([]);
+    setForm(createAppDraftDefaults());
     window.localStorage.removeItem(STORAGE_KEY);
     setStatus("草稿已清空。");
   }
 
-  async function exportDocx() {
+  function addAttachments(event) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    setAttachments((current) => [
+      ...current,
+      ...files.map((file) => ({
+        id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        previewUrl: file.type.startsWith("image/") ? window.URL.createObjectURL(file) : ""
+      }))
+    ]);
+    event.target.value = "";
+    setStatus("附件已加入，之後可直接接到匯出流程。");
+  }
+
+  function removeAttachment(attachmentId) {
+    setAttachments((current) => {
+      const target = current.find((attachment) => attachment.id === attachmentId);
+      if (target?.previewUrl) window.URL.revokeObjectURL(target.previewUrl);
+      return current.filter((attachment) => attachment.id !== attachmentId);
+    });
+  }
+
+  function moveAttachment(attachmentId, direction) {
+    setAttachments((current) => {
+      const index = current.findIndex((attachment) => attachment.id === attachmentId);
+      if (index < 0) return current;
+
+      const nextIndex = direction === "up" ? index - 1 : index + 1;
+      if (nextIndex < 0 || nextIndex >= current.length) return current;
+
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      next.splice(nextIndex, 0, item);
+      return next;
+    });
+  }
+
+  async function exportPrimaryDocument() {
     const result = validateCaseForm(form);
     if (!result.success) {
       setStatus(`請先補齊欄位：${summarizeIssues(result).join("、")}`);
       return;
     }
 
+    if (!primaryDocument) {
+      setStatus("請先勾選至少一份可匯出的文件。");
+      return;
+    }
+
     setBusy(true);
-    setStatus("正在產出已填好的官方 Word...");
+    setStatus(`正在產出 ${primaryDocument.shortTitle}...`);
 
     try {
-      const docxBuffer = await renderDocxBuffer({ ...result.data, exportFormat: "docx" });
-      const blob = new Blob([docxBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      const exported = await exportDocument({
+        documentId: primaryDocument.id,
+        format: "docx",
+        formData: result.data
       });
+      const blob = new Blob([exported.buffer], { type: exported.contentType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "再生能源發電設備併聯審查申請表.docx";
+      link.download = exported.fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      setStatus("官方 Word 已匯出，送審前請自行確認欄位內容，並可自行另存 PDF。");
+      setStatus(`已匯出 ${primaryDocument.shortTitle}。附件串接點已預留，下一步可直接接多文件合併。`);
     } catch (error) {
       console.error(error);
       setStatus("匯出失敗，請稍後再試。");
@@ -812,18 +501,18 @@ export default function Page() {
       <div className="shell">
         <section className="hero">
           <div className="hero-copy">
-            <h1>再生能源發電設備併聯審查申請表</h1>
+            <h1>lihiPDF 文件框架版</h1>
             <p>
-              這版直接比照你給的參考頁邏輯做成閱讀型流程。主欄位留在前段，補充欄位往後收，
-              讓送審資料可以一路往下填，不用在一大坨表單裡迷路。
+              先把共用案件資料、文件選擇、附件骨架與匯出管線整理好。第一份表單已接進這個框架，
+              後面第二份第三份就只要補 mapper，不用再拆整個 app。
             </p>
           </div>
           <div className="hero-ribbon">
-            <div className="hero-ribbon-label">114 年 03 月 11 日修正版欄位結構</div>
-            <div className="hero-ribbon-value">以台電送審順序整理</div>
+            <div className="hero-ribbon-label">Framework First</div>
+            <div className="hero-ribbon-value">Form 1 已掛上 registry / pipeline</div>
           </div>
           <div className="overview">
-            {sectionSnapshot.map((item) => (
+            {overviewCards.map((item) => (
               <div className="overview-card" key={item.title}>
                 <span>{item.title}</span>
                 <strong>{item.value}</strong>
@@ -834,62 +523,121 @@ export default function Page() {
 
         <div className="workspace">
           <form className="form-stack">
-            {sections.map((section, index) => {
-            const detailFields = section.detailFields ?? [];
-            const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
-            const totalCount = section.fields.length + detailFields.length;
-
-            return (
-              <section className="section" key={section.title}>
-                <div className={`section-card ${section.title === "案件補充與申請選項" ? "is-tight" : ""}`}>
-                  <div className="section-header">
-                    <div>
-                      <div className="section-kicker">Step {index + 1}</div>
-                      <h2>{section.title}</h2>
-                    </div>
-                    <div className="section-progress">
-                      <span>本段完成度</span>
-                      <strong>{filledCount} / {totalCount}</strong>
-                    </div>
+            <section className="section">
+              <div className="section-card">
+                <div className="section-header">
+                  <div>
+                    <div className="section-kicker">Framework</div>
+                    <h2>文件選擇與附件骨架</h2>
                   </div>
-                  <p className="section-description">{section.description}</p>
-                  {section.staticItems?.length ? (
-                    <div className="static-grid">
-                      {section.staticItems.map(([label, value]) => (
-                        <div className="static-card" key={label}>
-                          <div className="hint">{label}</div>
-                          <div className="value-chip">{value}</div>
+                  <div className="section-progress">
+                    <span>目前選擇</span>
+                    <strong>{selectedDocumentIds.length} 份文件</strong>
+                  </div>
+                </div>
+                <p className="section-description">先決定這次案件要準備哪些文件，附件也在這裡先排好，後面直接接合併輸出。</p>
+                <div className="document-grid">
+                  {DOCUMENT_OPTIONS.map((documentOption) => {
+                    const definition = DOCUMENT_REGISTRY[documentOption.id];
+                    const isChecked = Boolean(form.selectedDocuments[documentOption.id]);
+                    return (
+                      <label className={`document-card ${isChecked ? "is-selected" : ""}`} key={documentOption.id}>
+                        <div className="document-card-head">
+                          <input
+                            aria-label={documentOption.title}
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(event) => updateDocumentSelection(documentOption.id, event.target.checked)}
+                          />
+                          <div>
+                            <strong>{documentOption.title}</strong>
+                            <span>{definition?.status === "ready" ? "已接上匯出" : "框架保留中"}</span>
+                          </div>
+                        </div>
+                        <p>{documentOption.description}</p>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="attachment-panel">
+                  <div className="attachment-panel-head">
+                    <div>
+                      <div className="hint">附件系統</div>
+                      <h3>圖片與補件附件</h3>
+                    </div>
+                    <label className="secondary upload-button">
+                      加入附件
+                      <input aria-label="加入附件" type="file" multiple onChange={addAttachments} />
+                    </label>
+                  </div>
+                  {attachments.length === 0 ? (
+                    <p className="footer-note">目前還沒有附件。骨架已完成，已可先測新增、刪除、排序流程。</p>
+                  ) : (
+                    <div className="attachment-list">
+                      {attachments.map((attachment, index) => (
+                        <div className="attachment-card" key={attachment.id}>
+                          <div className="attachment-meta">
+                            <strong>{attachment.fileName}</strong>
+                            <span>{attachment.mimeType || "未知格式"} / {Math.ceil(attachment.size / 1024)} KB</span>
+                          </div>
+                          <div className="attachment-actions">
+                            <button type="button" className="secondary" onClick={() => moveAttachment(attachment.id, "up")} disabled={index === 0}>
+                              上移
+                            </button>
+                            <button type="button" className="secondary" onClick={() => moveAttachment(attachment.id, "down")} disabled={index === attachments.length - 1}>
+                              下移
+                            </button>
+                            <button type="button" className="danger" onClick={() => removeAttachment(attachment.id)}>
+                              刪除
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  ) : null}
-                  <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
-                    {section.fields.map(([name, label, type]) =>
-                      renderField(name, label, type, form, updateField, "core")
-                    )}
-                  </div>
-                  {section.note ? (
-                    <div className="section-note">
-                      <div className="hint">{section.note}</div>
-                    </div>
-                  ) : null}
-                  {detailFields.length > 0 ? (
-                    <details className="detail-shell">
-                      <summary>補充欄位 ({countFilledFields(form, detailFields)} / {detailFields.length})</summary>
-                      <div className="detail-panel">
-                        <div className="hint">這些欄位留給進階案件或台電補件時再填，不先擠進主流程。</div>
-                        <div className="grid cols-2">
-                          {detailFields.map(([name, label, type]) =>
-                            renderField(name, label, type, form, updateField, "detail")
-                          )}
-                        </div>
-                      </div>
-                    </details>
-                  ) : null}
+                  )}
                 </div>
-              </section>
-            );
-          })}
+              </div>
+            </section>
+
+            {CASE_SECTIONS.map((section, index) => {
+              const detailFields = section.detailFields ?? [];
+              const filledCount = countFilledFields(form, [...section.fields, ...detailFields]);
+              const totalCount = [...section.fields, ...detailFields].filter(([name]) => isFieldVisible(name, form)).length;
+
+              return (
+                <section className="section" key={section.title}>
+                  <div className="section-card">
+                    <div className="section-header">
+                      <div>
+                        <div className="section-kicker">Step {index + 1}</div>
+                        <h2>{section.title}</h2>
+                      </div>
+                      <div className="section-progress">
+                        <span>本段完成度</span>
+                        <strong>{filledCount} / {totalCount}</strong>
+                      </div>
+                    </div>
+                    <p className="section-description">{section.description}</p>
+                    <div className={`grid ${section.fields.some(([, , type]) => type === "textarea") ? "" : "cols-2"}`}>
+                      {section.fields.map(([name, label, type]) => renderField(name, label, type, form, updateField, "core"))}
+                    </div>
+                    {detailFields.length > 0 ? (
+                      <details className="detail-shell">
+                        <summary>補充欄位 ({countFilledFields(form, detailFields)} / {detailFields.length})</summary>
+                        <div className="detail-panel">
+                          <div className="hint">這些欄位留給進階案件或台電補件時再填，不先擠進主流程。</div>
+                          <div className="grid cols-2">
+                            {detailFields.map(([name, label, type]) => renderField(name, label, type, form, updateField, "detail"))}
+                          </div>
+                        </div>
+                      </details>
+                    ) : null}
+                  </div>
+                </section>
+              );
+            })}
+
             <section className="section final-check">
               <div className="section-card is-tight">
                 <div className="section-header">
@@ -902,26 +650,26 @@ export default function Page() {
                     <strong>{issues.length === 0 ? "可以匯出" : `還差 ${issues.length} 項`}</strong>
                   </div>
                 </div>
-                <p className="section-description">最後確認目前草稿缺什麼，避免匯出後還要回頭找欄位。</p>
+                <p className="section-description">這裡看的不是只有第一份文件，而是整個案件框架目前的完整度。</p>
                 <div className="grid cols-2">
-                <PreviewItem label="設置者名稱" value={form.ownerName} />
-                <PreviewItem label="案件地址" value={form.siteAddress} />
-                <PreviewItem label="聯絡人" value={form.contactPerson} />
-                <PreviewItem label="預計併聯日期" value={form.estimatedParallelDate} />
+                  <PreviewItem label="這次文件" value={buildSelectedDocumentSummary(form.selectedDocuments)} />
+                  <PreviewItem label="設置者名稱" value={form.ownerName} />
+                  <PreviewItem label="案件地址" value={form.siteAddress} />
+                  <PreviewItem label="附件數量" value={attachments.length ? `${attachments.length} 份` : ""} />
                 </div>
                 <div className="grid cols-2 review-grid">
                   <div className="review-card">
-                    <div className="hint">填寫提醒</div>
+                    <div className="hint">框架現況</div>
                     <ul className="footer-note">
-                      <li>申請日期可先留白，最後再補。</li>
-                      <li>主流程先填核心欄位，補充欄位有需要再展開。</li>
-                      <li>若看到舊資料，先按一次清空草稿再重填。</li>
+                      <li>Form 1 已接上 document registry 與 export pipeline。</li>
+                      <li>附件已可新增、刪除、排序，下一步只差掛到合併輸出。</li>
+                      <li>第二份第三份文件現在只差各自的 mapper 與模板處理。</li>
                     </ul>
                   </div>
                   <div className="review-card">
                     <div className="hint">匯出前檢查</div>
                     {issues.length === 0 ? (
-                      <p className="footer-note">可以匯出。下載 Word 後再確認一次內容，必要時自行另存 PDF。</p>
+                      <p className="footer-note">可以直接匯出第一份正式 Word，其他文件已在框架中預留位置。</p>
                     ) : (
                       <ul className="footer-note">
                         {issues.map((issue) => (
@@ -938,29 +686,29 @@ export default function Page() {
           <aside className="sidebar">
             <section className="sidebar-card summary-card">
               <div className="sidebar-kicker">案件摘要</div>
-              <h3>先填主要欄位，再匯出官方 Word</h3>
+              <h3>先把框架補齊，再接多文件輸出</h3>
               <div className="summary-grid">
                 <div className="summary-row">
                   <span>完成度</span>
                   <strong>{filledFields} / {totalFields} ({completionRate}%)</strong>
                 </div>
                 <div className="summary-row">
-                  <span>必填未完成</span>
-                  <strong>{missingRequired.length} 項</strong>
+                  <span>已選文件</span>
+                  <strong>{selectedDocumentIds.length} 份</strong>
                 </div>
                 <div className="summary-row">
-                  <span>可匯出格式</span>
-                  <strong>官方 Word</strong>
+                  <span>附件狀態</span>
+                  <strong>{attachments.length} 份</strong>
                 </div>
               </div>
-              <div className="status" role="status">{status || "填寫中，草稿會自動留在這台裝置。"}</div>
+              <div className="status" role="status">{status || "框架版已啟用，草稿會自動留在這台裝置。"}</div>
             </section>
 
             <section className="sidebar-card action-card">
               <div className="sidebar-kicker">操作列</div>
               <div className="actions">
-                <button className="primary" type="button" onClick={exportDocx} disabled={busy}>
-                  {busy ? "匯出中..." : "匯出官方 Word"}
+                <button className="primary" type="button" onClick={exportPrimaryDocument} disabled={busy || !primaryDocument}>
+                  {busy ? "匯出中..." : primaryDocument?.exportLabel || "請先選文件"}
                 </button>
                 <button className="secondary" type="button" onClick={applyCompanyDefaults}>
                   套用公司資料

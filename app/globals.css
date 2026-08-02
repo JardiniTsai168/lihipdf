@@ -307,6 +307,16 @@ h1 {
   gap: 14px;
 }
 
+.document-grid,
+.attachment-list {
+  display: grid;
+  gap: 14px;
+}
+
+.document-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .static-grid,
 .grid.cols-2,
 .review-grid {
@@ -641,6 +651,89 @@ select:focus {
   line-height: 1.5;
 }
 
+.document-card,
+.attachment-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(205, 185, 167, 0.75);
+  border-radius: 18px;
+  background: rgba(255, 253, 250, 0.84);
+}
+
+.document-card.is-selected {
+  border-color: rgba(217, 75, 128, 0.48);
+  background: linear-gradient(180deg, rgba(255, 241, 246, 0.92), rgba(255, 253, 250, 0.92));
+}
+
+.document-card-head,
+.attachment-panel-head,
+.attachment-actions,
+.attachment-meta {
+  display: flex;
+  gap: 12px;
+}
+
+.document-card-head,
+.attachment-panel-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.document-card-head input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin-top: 3px;
+}
+
+.document-card-head strong,
+.attachment-meta strong {
+  display: block;
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+}
+
+.document-card-head span,
+.document-card p,
+.attachment-meta span {
+  color: var(--muted);
+  font-family: "Avenir Next", "Noto Sans TC", "PingFang TC", sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.attachment-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(205, 185, 167, 0.7);
+  border-radius: 22px;
+  background: rgba(255, 249, 243, 0.82);
+}
+
+.attachment-meta {
+  flex-direction: column;
+}
+
+.attachment-actions {
+  flex-wrap: wrap;
+}
+
+.upload-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.upload-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .footer-note {
   margin: 0;
   font-size: 0.9rem;
@@ -783,6 +876,7 @@ select:focus {
   }
 
   .overview,
+  .document-grid,
   .static-grid,
   .grid.cols-2,
   .review-grid,
@@ -865,6 +959,11 @@ select:focus {
 
   .sidebar {
     gap: 14px;
+  }
+
+  .attachment-panel-head,
+  .document-card-head {
+    flex-direction: column;
   }
 
   .action-card {
