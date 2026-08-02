@@ -75,8 +75,6 @@ describe("document payload", () => {
       saleExisting: "",
       saleNew: "9",
       saleTotal: "9",
-      boundaryVoltage: "dummy-boundary-voltage",
-      parallelPointVoltage: "dummy-parallel-voltage",
       estimatedParallelDate: "2026-12-31"
     });
 
@@ -97,8 +95,6 @@ describe("document payload", () => {
       installedTotal: "9",
       saleNew: "9",
       saleTotal: "9",
-      boundaryVoltage: "dummy-boundary-voltage",
-      parallelPointVoltage: "dummy-parallel-voltage",
       estimatedParallelDate: "2026-12-31"
     });
     const xml = new PizZip(docxBuffer).file("word/document.xml").asText();

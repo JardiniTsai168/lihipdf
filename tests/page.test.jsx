@@ -37,7 +37,7 @@ describe("single-form MVP page", () => {
     render(<Page />);
 
     fireEvent.click(within(screen.getByRole("radiogroup", { name: "預計併聯方式" })).getAllByRole("button")[1]);
-    expect(screen.getByPlaceholderText("dummy-inner-line-number")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("併聯用戶內線時填寫")).toBeInTheDocument();
     expect(screen.getByLabelText("契約容量_瓩")).toBeInTheDocument();
 
     expect(screen.getAllByText("太陽光電").length).toBeGreaterThan(0);
